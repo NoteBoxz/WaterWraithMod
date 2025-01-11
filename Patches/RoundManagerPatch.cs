@@ -17,7 +17,6 @@ namespace WaterWraithMod.Patches
     {
         public static bool IsSpawningWaterWraithThisRound;
         public static float WWTimer;
-        private static InputAction debugWarpAction = null!;
         [HarmonyPatch("PredictAllOutsideEnemies")]
         [HarmonyPostfix]
         public static void PredictAllOutsideEnemiesPostFix(RoundManager __instance)
@@ -37,48 +36,44 @@ namespace WaterWraithMod.Patches
                 IsSpawningWaterWraithThisRound = true;
                 WaterWraithMod.Logger.LogMessage("Spawning water wraith!!!!!!!!!!!!!!!!!!!!!!!!!!");
             }
-
-            debugWarpAction = new InputAction("DebugWarpPikmin", InputActionType.Button, "<Keyboard>/f9");
-            debugWarpAction.performed += ctx => SpawnThingy();
-            debugWarpAction.Enable();
         }
 
-        public static void SpawnThingy()
-        {
-            RoundManager __instance = RoundManager.Instance;
-            EnemyType WraithEnemy = WaterWraithMod.assetBundle.LoadAsset<EnemyType>("Assets/ModAsset/WaterType.asset");
-            int SpawnableIndex = -1;
+        // public static void SpawnThingy()
+        // {
+        //     RoundManager __instance = RoundManager.Instance;
+        //     EnemyType WraithEnemy = WaterWraithMod.assetBundle.LoadAsset<EnemyType>("Assets/ModAsset/WaterType.asset");
+        //     int SpawnableIndex = -1;
 
-            for (int i = 0; i < __instance.currentLevel.Enemies.Count; i++)
-            {
-                EnemyType t = __instance.currentLevel.Enemies[i].enemyType;
-                if (t == WraithEnemy)
-                {
-                    SpawnableIndex = i;
-                    WaterWraithMod.Logger.LogInfo($"Found a WaterWraith at index {i} in the enemies list!");
-                    break;
-                }
-            }
+        //     for (int i = 0; i < __instance.currentLevel.Enemies.Count; i++)
+        //     {
+        //         EnemyType t = __instance.currentLevel.Enemies[i].enemyType;
+        //         if (t == WraithEnemy)
+        //         {
+        //             SpawnableIndex = i;
+        //             WaterWraithMod.Logger.LogInfo($"Found a WaterWraith at index {i} in the enemies list!");
+        //             break;
+        //         }
+        //     }
 
-            if (SpawnableIndex == -1)
-            {
-                WaterWraithMod.Logger.LogError("No WaterWraith found in the enemies list!");
-                return;
-            }
+        //     if (SpawnableIndex == -1)
+        //     {
+        //         WaterWraithMod.Logger.LogError("No WaterWraith found in the enemies list!");
+        //         return;
+        //     }
 
-            // Get the local player's transform
-            Transform playerTransform = StartOfRound.Instance.localPlayerController.transform;
+        //     // Get the local player's transform
+        //     Transform playerTransform = StartOfRound.Instance.localPlayerController.transform;
 
-            // Calculate a position in front of the player
-            Vector3 spawnPosition = playerTransform.position + playerTransform.forward * 3f; // 3 units in front of the player
+        //     // Calculate a position in front of the player
+        //     Vector3 spawnPosition = playerTransform.position + playerTransform.forward * 3f; // 3 units in front of the player
 
-            // Spawn the Water Wraith at the calculated position
-            __instance.SpawnEnemyOnServer(
-                spawnPosition,
-                playerTransform.rotation.eulerAngles.y,
-                SpawnableIndex
-            );
-        }
+        //     // Spawn the Water Wraith at the calculated position
+        //     __instance.SpawnEnemyOnServer(
+        //         spawnPosition,
+        //         playerTransform.rotation.eulerAngles.y,
+        //         SpawnableIndex
+        //     );
+        // }
 
         [HarmonyPatch("Update")]
         [HarmonyPostfix]
