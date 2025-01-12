@@ -7,11 +7,13 @@ using HarmonyLib;
 using UnityEngine;
 using BepInEx.Configuration;
 using WaterWraithMod.Patches;
+using BepInEx.Bootstrap;
 
 namespace WaterWraithMod
 {
     [BepInPlugin(MyPluginInfo.PLUGIN_GUID, MyPluginInfo.PLUGIN_NAME, MyPluginInfo.PLUGIN_VERSION)]
     [BepInDependency("evaisa.lethallib")]
+    [BepInDependency("NoteBoxz.LethalMin",BepInDependency.DependencyFlags.SoftDependency)]
     public class WaterWraithMod : BaseUnityPlugin
     {
         public static WaterWraithMod Instance { get; private set; } = null!;
@@ -126,6 +128,11 @@ namespace WaterWraithMod
             EnemyType WraithEnemy = assetBundle.LoadAsset<EnemyType>("Assets/ModAsset/WaterType.asset");
             TerminalNode WraithNode = assetBundle.LoadAsset<TerminalNode>("Assets/ModAsset/WaterNode.asset");
             LethalLib.Modules.Enemies.RegisterEnemy(WraithEnemy, 0, LethalLib.Modules.Levels.LevelTypes.All, WraithNode, null!);
+        }
+
+        public static bool IsDependencyLoaded(string pluginGUID)
+        {
+            return Chainloader.PluginInfos.ContainsKey(pluginGUID);
         }
 
         internal static void Patch()

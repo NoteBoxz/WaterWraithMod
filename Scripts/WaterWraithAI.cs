@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using GameNetcodeStuff;
+using LethalMin;
 using Unity.Netcode;
 using UnityEngine;
 using WaterWraithMod.Patches;
@@ -186,12 +187,27 @@ namespace WaterWraithMod.Scripts
             timeSinceHitting = 0;
             if (collidedEnemy != null)
             {
+                if (WaterWraithMod.IsDependencyLoaded("NoteBoxz.LethalMin") && LETHALMIN_ISRESISTANTTOCRUSH(collidedEnemy))
+                {
+                    timeSinceHitting = 1;
+                    return;
+                }
                 collidedEnemy.HitEnemy(2, null, true);
                 if (!collidedEnemy.isEnemyDead)
                     collidedEnemy.stunNormalizedTimer = UnityEngine.Random.Range(0.1f, 1f);
 
                 TargetedEnemies.Add(collidedEnemy);
             }
+        }
+
+        public bool LETHALMIN_ISRESISTANTTOCRUSH(EnemyAI ai)
+        {
+            PikminAI Pai = ai.GetComponent<PikminAI>();
+            if (Pai != null)
+            {
+                return LethalMin.LethalMin.IsPikminResistantToHazard(Pai.PminType, HazardType.Crush);
+            }
+            return false;
         }
 
         Vector3 LastPosition;
