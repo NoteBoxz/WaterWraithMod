@@ -30,6 +30,11 @@ namespace WaterWraithMod.Patches
 
             float RNG = UnityEngine.Random.Range(0.0f, 100f);
             float AIvalue = WaterWraithMod.SpawnChanceConfig.Value;
+            // WaterWraithMod.Logger.LogInfo($"LVNAME: {__instance.currentLevel.name}, PName: {__instance.currentLevel.PlanetName}, UH: {__instance.currentLevel.sceneName}");
+            // foreach (var item in WaterWraithMod.GetParsedMoonSpawn())
+            // {
+            //     WaterWraithMod.Logger.LogInfo(item);
+            // }
             if (WaterWraithMod.GetParsedMoonSpawn().ContainsKey(__instance.currentLevel.PlanetName))
             {
                 WaterWraithMod.GetParsedMoonSpawn().TryGetValue(__instance.currentLevel.PlanetName, out AIvalue);

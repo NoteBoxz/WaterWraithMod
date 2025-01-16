@@ -27,6 +27,7 @@ namespace WaterWraithMod
         public static ConfigEntry<float> SpawnTimerConfig = null!;
         public static ConfigEntry<bool> ChaseEnemyConfig = null!;
         public static ConfigEntry<int> DamageConfig = null!;
+        public static ConfigEntry<int> EDamageConfig = null!;
         public static ConfigEntry<string> PerMoonSpawnChanceConfig = null!;
         public static ConfigEntry<WraithSpawnPosition> WraithSpawnPositionConfig = null!;
         public static ConfigEntry<GameStle> gameStleConfig = null!;
@@ -83,7 +84,7 @@ namespace WaterWraithMod
             PerMoonSpawnChanceConfig = Config.Bind(
                 "WaterWraith",
                 "Per-Moon Spawn Chance",
-                "ZeranosMoon:0,March:35",
+                "7510 Zeranos:0,61 March:35",
                 "The chance for a Water Wraith to spawn per moon these values will override"+
                 " the base spawn chance when spawning on a moon in the list."+
                 " (Formatted just like Lethal Level Loader's configs)"+
@@ -115,7 +116,14 @@ namespace WaterWraithMod
                 "WaterWraith",
                 "Damage",
                 50,
-                "The ammount of damage the water wraith deals."
+                "The ammount of damage the water wraith deals.(0-100)"
+            );
+
+            EDamageConfig = Config.Bind(
+                "WaterWraith",
+                "Enemy Damage",
+                1,
+                "The ammount of damage the water wraith deals to Enemies. Recomended: (0-2)"
             );
 
             gameStleConfig = Config.Bind(

@@ -22,6 +22,7 @@ namespace WaterWraithMod.Scripts
         public bool IsChaseingEnemy = false;
         public bool IsWandering = false;
         float timeSinceHitting;
+        float timeInEnemyChase;
 
         public override void Start()
         {
@@ -99,6 +100,7 @@ namespace WaterWraithMod.Scripts
                             StopSearch(roamFactory);
                             TargetEnemy = CheckLineOfSight(enemyObjects, 360, 15).GetComponentInChildren<EnemyAI>();
                             IsChaseingEnemy = true;
+                            timeInEnemyChase = 0;
                             WaterWraithMod.Logger.LogInfo("WaterWraith: Chasing enemy");
                             SwitchToBehaviourClientRpc(1);
                         }
@@ -117,8 +119,12 @@ namespace WaterWraithMod.Scripts
                         (TargetEnemy == null ||
                         TargetEnemy.isEnemyDead ||
                         TargetedEnemies.Contains(TargetEnemy) ||
-                        Vector3.Distance(transform.position, TargetEnemy.transform.position) > 20f))
+                        Vector3.Distance(transform.position, TargetEnemy.transform.position) > 20f)
+                        || timeInEnemyChase > 25)
                     {
+                        if (TargetEnemy != null)
+                            TargetedEnemies.Add(TargetEnemy);
+
                         TargetEnemy = null!;
                         IsChaseingEnemy = false;
                         WaterWraithMod.Logger.LogInfo("WaterWraith: stopped Chasing enemy");
@@ -128,6 +134,7 @@ namespace WaterWraithMod.Scripts
                     else if (IsChaseingEnemy)
                     {
                         SetDestinationToPosition(TargetEnemy.transform.position);
+                        timeInEnemyChase += Time.deltaTime;
                     }
 
                     //PlayerIf
@@ -166,7 +173,7 @@ namespace WaterWraithMod.Scripts
             if (P != null)
             {
                 Vector3 backDirection = P.transform.forward;
-                P.DamagePlayer(WaterWraithMod.DamageConfig.Value, true, true, CauseOfDeath.Crushing, 1, false, backDirection * 25);
+                P.DamagePlayer(WaterWraithMod.DamageConfig.Value, true, true, CauseOfDeath.Crushing, 1, false, backDirection * 10);
                 if (P.isPlayerDead)
                 {
                     creatureSFX.PlayOneShot(KillSFX);
@@ -184,18 +191,20 @@ namespace WaterWraithMod.Scripts
             {
                 return;
             }
-            timeSinceHitting = 0;
-            if (collidedEnemy != null)
+            if (collidedEnemy != null && !collidedEnemy.isEnemyDead)
             {
                 if (WaterWraithMod.IsDependencyLoaded("NoteBoxz.LethalMin") && LETHALMIN_ISRESISTANTTOCRUSH(collidedEnemy))
                 {
                     timeSinceHitting = 1;
                     return;
                 }
-                collidedEnemy.HitEnemy(2, null, true);
-                if (!collidedEnemy.isEnemyDead)
-                    collidedEnemy.stunNormalizedTimer = UnityEngine.Random.Range(0.1f, 1f);
 
+                collidedEnemy.HitEnemy(WaterWraithMod.EDamageConfig.Value, null, true);
+
+                if (!collidedEnemy.isEnemyDead)
+                    collidedEnemy.stunNormalizedTimer += UnityEngine.Random.Range(0f, 1f);
+
+                timeSinceHitting = 0;
                 TargetedEnemies.Add(collidedEnemy);
             }
         }
