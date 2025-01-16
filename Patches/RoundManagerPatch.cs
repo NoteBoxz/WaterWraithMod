@@ -29,12 +29,17 @@ namespace WaterWraithMod.Patches
             IsSpawningWaterWraithThisRound = false;
 
             float RNG = UnityEngine.Random.Range(0.0f, 100f);
-
-            if (RNG < WaterWraithMod.SpawnChanceConfig.Value)
+            float AIvalue = WaterWraithMod.SpawnChanceConfig.Value;
+            if (WaterWraithMod.GetParsedMoonSpawn().ContainsKey(__instance.currentLevel.PlanetName))
+            {
+                WaterWraithMod.GetParsedMoonSpawn().TryGetValue(__instance.currentLevel.PlanetName, out AIvalue);
+                WaterWraithMod.Logger.LogInfo($"override value: {AIvalue}");
+            }
+            WaterWraithMod.Logger.LogInfo($"RNG: {RNG}, CHANCE: {AIvalue}");
+            if (RNG < AIvalue)
             {
                 WWTimer = WaterWraithMod.SpawnTimerConfig.Value;
                 IsSpawningWaterWraithThisRound = true;
-                WaterWraithMod.Logger.LogMessage("Spawning water wraith!!!!!!!!!!!!!!!!!!!!!!!!!!");
             }
         }
 

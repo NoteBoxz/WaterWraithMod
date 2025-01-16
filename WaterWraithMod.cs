@@ -8,12 +8,14 @@ using UnityEngine;
 using BepInEx.Configuration;
 using WaterWraithMod.Patches;
 using BepInEx.Bootstrap;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace WaterWraithMod
 {
     [BepInPlugin(MyPluginInfo.PLUGIN_GUID, MyPluginInfo.PLUGIN_NAME, MyPluginInfo.PLUGIN_VERSION)]
     [BepInDependency("evaisa.lethallib")]
-    [BepInDependency("NoteBoxz.LethalMin",BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency("NoteBoxz.LethalMin", BepInDependency.DependencyFlags.SoftDependency)]
     public class WaterWraithMod : BaseUnityPlugin
     {
         public static WaterWraithMod Instance { get; private set; } = null!;
@@ -25,8 +27,32 @@ namespace WaterWraithMod
         public static ConfigEntry<float> SpawnTimerConfig = null!;
         public static ConfigEntry<bool> ChaseEnemyConfig = null!;
         public static ConfigEntry<int> DamageConfig = null!;
+        public static ConfigEntry<string> PerMoonSpawnChanceConfig = null!;
         public static ConfigEntry<WraithSpawnPosition> WraithSpawnPositionConfig = null!;
         public static ConfigEntry<GameStle> gameStleConfig = null!;
+        public static Dictionary<string, float> GetParsedMoonSpawn()
+        {
+            Dictionary<string, float> dict = new Dictionary<string, float>();
+            if (string.IsNullOrEmpty(PerMoonSpawnChanceConfig.Value))
+            {
+                return new Dictionary<string, float>();
+            }
+            foreach (var item in PerMoonSpawnChanceConfig.Value.Split(',').ToList())
+            {
+                string[] parts = item.Split(':');
+                float f;
+                if (float.TryParse(parts[1], out f))
+                {
+                    dict.Add(parts[0], f);
+                }
+                else
+                {
+                    Logger.LogWarning($"Failed to parse ({item})!");
+                }
+            }
+            return dict;
+        }
+
 
         private void Awake()
         {
@@ -51,7 +77,18 @@ namespace WaterWraithMod
                 "WaterWraith",
                 "Spawn Chance",
                 25f,
-                "The chance for a Water Wraith to spawn."
+                "The chance for a Water Wraith to spawn. (0-100)"
+            );
+
+            PerMoonSpawnChanceConfig = Config.Bind(
+                "WaterWraith",
+                "Per-Moon Spawn Chance",
+                "ZeranosMoon:0,March:35",
+                "The chance for a Water Wraith to spawn per moon these values will override"+
+                " the base spawn chance when spawning on a moon in the list."+
+                " (Formatted just like Lethal Level Loader's configs)"+
+                " (sperate with commas no spaces inbetween sperate moonnames and spawn chances with colons)"+
+                " (moonname1:25,moonname2:35,moonname3:55...) (0-100)"
             );
 
             ChaseEnemyConfig = Config.Bind(
