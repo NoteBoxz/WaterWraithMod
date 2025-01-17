@@ -108,7 +108,7 @@ namespace WaterWraithMod
             SpawnTimerConfig = Config.Bind(
                 "WaterWraith",
                 "Spawn Timer (Seconds)",
-                180f,
+                300f,
                 "The amount of time it takes for the wraith to spawn."
             );
 

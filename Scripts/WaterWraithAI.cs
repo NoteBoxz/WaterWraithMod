@@ -5,6 +5,7 @@ using GameNetcodeStuff;
 using LethalMin;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.AI;
 using WaterWraithMod.Patches;
 
 namespace WaterWraithMod.Scripts
@@ -21,14 +22,22 @@ namespace WaterWraithMod.Scripts
         public bool CanEnterState2 = false;
         public bool IsChaseingEnemy = false;
         public bool IsWandering = false;
+        public bool HasLostTires;
+        public Vector3 FleePos;
+        public bool IsVunerable;
         float timeSinceHitting;
         float timeInEnemyChase;
+        public GameObject[] TireObjectsToDisable = [];
+        public GameObject[] TireObjectsToEnable = [];
+        public PlayerControllerB PlayerFleeingFrom;
 
         public override void Start()
         {
             base.Start();
-            moveAud.volume = 0;
+            WMesh.SetOverride((int)WaterWraithMod.gameStleConfig.Value);
+            creatureAnimator.SetTrigger("Spawn");
             inSpecialAnimation = true;
+            moveAud.volume = 0;
             List<GameObject> AllSpawnPoints = new List<GameObject>();
             GameObject[] spawnPointsIn = GameObject.FindGameObjectsWithTag("AINode");
             GameObject[] spawnPointsOut = GameObject.FindGameObjectsWithTag("OutsideAINode");
@@ -47,7 +56,6 @@ namespace WaterWraithMod.Scripts
                 WaterWraithMod.Logger.LogInfo("WaterWraith: WaterWraith determined it spawned inside");
                 isOutside = false;
             }
-            WMesh.SetOverride((int)WaterWraithMod.gameStleConfig.Value);
             StartCoroutine(WaitForCrush());
         }
 
@@ -63,7 +71,7 @@ namespace WaterWraithMod.Scripts
         public override void DoAIInterval()
         {
             base.DoAIInterval();
-            if (StartOfRound.Instance.livingPlayers == 0 || isEnemyDead)
+            if (StartOfRound.Instance.livingPlayers == 0 || isEnemyDead || inSpecialAnimation)
             {
                 moveAud.volume = 0;
                 return;
@@ -158,8 +166,110 @@ namespace WaterWraithMod.Scripts
                     }
 
                     break;
+                case 2:
+                    if (FleePos != Vector3.zero)
+                    {
+                        if (IsWandering)
+                        {
+                            StopSearch(roamFactory);
+                            IsWandering = false;
+                        }
+                        agent.speed = 15;
+                        agent.acceleration = 999;
+                        agent.angularSpeed = 300;
+                        SetDestinationToPosition(FleePos);
+                        if (Vector3.Distance(transform.position, FleePos) < 30f
+                            || !agent.CalculatePath(FleePos, new NavMeshPath()))
+                        {
+                            FleePos = Vector3.zero;
+                        }
+                    }
+                    if (!IsWandering && FleePos == Vector3.zero)
+                    {
+                        WaterWraithMod.Logger.LogInfo("WaterWraith: Starting Search 2!");
+                        agent.speed = 3.5f;
+                        agent.acceleration = 8;
+                        agent.angularSpeed = 120;
+                        StartSearch(transform.position, roamFactory);
+                        IsWandering = true;
+                    }
+                    PlayerControllerB b = CheckLineOfSightForPlayer(360, 15);
+                    if (IsWandering && b)
+                    {
+                        FleePos = ChooseFarthestNodeFromPosition(b.transform.position).position;
+                        SetDestinationToPosition(FleePos);
+                        WaterWraithMod.Logger.LogInfo("WaterWraith: Fleeing from player!");
+                        break;
+                    }
+                    break;
             }
         }
+
+        public override void HitEnemy(int force = 1, PlayerControllerB playerWhoHit = null, bool playHitSFX = false, int hitID = -1)
+        {
+            base.HitEnemy(force, playerWhoHit, playHitSFX, hitID);
+            enemyHP -= force;
+            if (enemyHP <= 0)
+            {
+                if (!HasLostTires)
+                {
+                    if (IsServer)
+                        RemoveTiresClientRpc();
+                }
+                else
+                {
+                    KillEnemyOnOwnerClient();
+                }
+            }
+        }
+
+        public override void KillEnemy(bool destroy = false)
+        {
+            base.KillEnemy(destroy);
+        }
+
+        [ClientRpc]
+        public void RemoveTiresClientRpc()
+        {
+            if (HasLostTires)
+            {
+                WaterWraithMod.Logger.LogWarning("The wraith has already removed it's tires");
+                return;
+            }
+            WaterWraithMod.Logger.LogInfo("Removing Tires");
+            if (IsServer && IsWandering)
+            {
+                StopSearch(roamFactory);
+                IsWandering = false;
+            }
+            enemyHP = 5;
+            inSpecialAnimation = true;
+            moveAud.volume = 0;
+            HasLostTires = true;
+            creatureAnimator.SetTrigger("KnockedOff");
+            creatureAnimator.SetBool("HasLostRollers", true);
+            foreach (GameObject Go in TireObjectsToDisable)
+            {
+                Go.SetActive(false);
+            }
+            foreach (GameObject Go in TireObjectsToEnable)
+            {
+                Go.SetActive(true);
+                Go.transform.SetParent(null, true);
+            }
+            StartCoroutine(WaitToFlee());
+        }
+
+        IEnumerator WaitToFlee()
+        {
+            yield return new WaitForSeconds(2.6f);
+            FleePos = ChooseFarthestNodeFromPosition(transform.position).position;
+            SwitchToBehaviourClientRpc(2);
+            inSpecialAnimation = false;
+
+        }
+
+
         public override void OnCollideWithPlayer(Collider other)
         {
             base.OnCollideWithPlayer(other);
@@ -208,7 +318,6 @@ namespace WaterWraithMod.Scripts
                 TargetedEnemies.Add(collidedEnemy);
             }
         }
-
         public bool LETHALMIN_ISRESISTANTTOCRUSH(EnemyAI ai)
         {
             PikminAI Pai = ai.GetComponent<PikminAI>();
@@ -225,9 +334,11 @@ namespace WaterWraithMod.Scripts
         {
             if (IsServer)
             {
-                moveAud.volume = agent.velocity.normalized.magnitude;
+                if (!HasLostTires)
+                    moveAud.volume = agent.velocity.normalized.magnitude;
 
                 creatureAnimator.SetBool("Moving", agent.velocity.normalized.magnitude > 0.1f);
+                creatureAnimator.SetBool("IsRunning", HasLostTires && FleePos != Vector3.zero);
             }
             else
             {
@@ -235,13 +346,15 @@ namespace WaterWraithMod.Scripts
                 if (Vector3.Distance(LastPosition, transform.position) > 0.1f)
                 {
                     LastPosition = transform.position;
-                    moveAud.volume = 1f;
+                    if (!HasLostTires)
+                        moveAud.volume = 1f;
                     creatureAnimator.SetBool("Moving", true);
                 }
                 else if (LastPosCheck > 1f)
                 {
                     LastPosCheck = 0f;
-                    moveAud.volume = 0f;
+                    if (!HasLostTires)
+                        moveAud.volume = 0f;
                     creatureAnimator.SetBool("Moving", false);
                 }
             }
