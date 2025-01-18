@@ -19,8 +19,6 @@ public class WaterWraithMeshOverride
     public GameObject Object = null!;
     public MeshRenderer[] meshRenderers = [];
     public SkinnedMeshRenderer[] skinnedMeshRenderers = [];
-    public GameObject[] TireObjectsToDisable = [];
-    public GameObject[] TireObjectsToEnable = [];
     public AudioSource MoveAudioSource = null!;
 }
 public class WaterWraithMesh : MonoBehaviour
@@ -47,8 +45,6 @@ public class WaterWraithMesh : MonoBehaviour
                 AI.skinnedMeshRenderers = waterWraithMeshOverride.skinnedMeshRenderers;
                 AI.creatureAnimator = waterWraithMeshOverride.Anim;
                 AI.moveAud = waterWraithMeshOverride.MoveAudioSource;
-                AI.TireObjectsToDisable = waterWraithMeshOverride.TireObjectsToDisable;
-                AI.TireObjectsToEnable = waterWraithMeshOverride.TireObjectsToEnable;
             }
             else
             {
