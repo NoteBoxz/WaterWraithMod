@@ -15,7 +15,7 @@ namespace WaterWraithMod.Scripts
         public WaterWraithAI ai = null!;
 
         private Dictionary<Collider, float> objectsInTriggerWDelay = new Dictionary<Collider, float>();
-        private const float collisionDelay = 0.1f; // Adjust this value as needed
+        private const float collisionDelay = 0.5f; // Adjust this value as needed
 
         private void OnTriggerEnter(Collider other)
         {

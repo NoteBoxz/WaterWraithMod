@@ -31,7 +31,9 @@ namespace WaterWraithMod.Scripts
         public GameObject[] TireObjectsToDisable = [];
         TireFragments[] TireObjectsToEnable = [];
         public PlayerControllerB PlayerFleeingFrom = null!;
+        public PlayerControllerB PlayerStunnedBy = null!;
         public AudioClip[] DethSounds = [];
+        public AudioClip[] HurtSounds = [];
         WraithTire[] Tires = [];
 
         public override void Start()
@@ -73,7 +75,6 @@ namespace WaterWraithMod.Scripts
             WaterWraithMod.Logger.LogInfo("WaterWraith: Should be able to move now");
             yield return new WaitForSeconds(2f);
             CanEnterState2 = true;
-            enemyHP = 1;
         }
 
         public override void DoAIInterval()
@@ -225,6 +226,7 @@ namespace WaterWraithMod.Scripts
                         StopSearch(roamFactory);
                         IsWandering = false;
                     }
+                    SetDestinationToPosition(transform.position);
                     agent.speed = 0;
                     agent.acceleration = 0;
                     agent.angularSpeed = 0;
@@ -257,7 +259,7 @@ namespace WaterWraithMod.Scripts
             base.HitEnemy(force, playerWhoHit, playHitSFX, hitID);
             enemyHP -= force;
             timeBeingScared += 1;
-            if (isEnemyDead || inSpecialAnimation)
+            if (isEnemyDead || inSpecialAnimation || !isVurable.Value)
             {
                 return;
             }
@@ -273,6 +275,30 @@ namespace WaterWraithMod.Scripts
                     if (IsServer)
                         KillWraithClientRpc();
                 }
+            }
+        }
+
+        public override void HitFromExplosion(float distance)
+        {
+            base.HitFromExplosion(distance);
+            WaterWraithMod.Logger.LogInfo($"Wraith kabboom!");
+            if (!isVurable.Value)
+            {
+                SwitchToBehaviourClientRpc(3);
+                timeBeingScared = 0;
+                isVurable.Value = true;
+            }
+        }
+        public override void SetEnemyStunned(bool setToStunned, float setToStunTime = 1, PlayerControllerB setStunnedByPlayer = null!)
+        {
+            base.SetEnemyStunned(setToStunned, setToStunTime, setStunnedByPlayer);
+            if (!setToStunned) { return; }
+            WaterWraithMod.Logger.LogInfo($"Wraith cstuned!");
+            if (!isVurable.Value)
+            {
+                SwitchToBehaviourClientRpc(3);
+                timeBeingScared = 0;
+                isVurable.Value = true;
             }
         }
 
@@ -296,7 +322,7 @@ namespace WaterWraithMod.Scripts
                 IsWandering = false;
             }
             targetPlayer = null;
-            enemyHP = 5;
+            enemyHP = 14;
             inSpecialAnimation = true;
             moveAud.volume = 0;
             HasLostTires = true;
@@ -349,6 +375,10 @@ namespace WaterWraithMod.Scripts
 
         public void DamagePlayer(PlayerControllerB player)
         {
+            if (isVurable.Value)
+            {
+                return;
+            }
             if (player != null)
             {
                 Vector3 backDirection = player.transform.forward;
@@ -366,6 +396,10 @@ namespace WaterWraithMod.Scripts
 
         public void DamageEnemy(EnemyAI enemy)
         {
+            if (isVurable.Value)
+            {
+                return;
+            }
             if (enemy != null && !enemy.isEnemyDead)
             {
                 if (WaterWraithMod.IsDependencyLoaded("NoteBoxz.LethalMin") && LETHALMIN_ISRESISTANTTOCRUSH(enemy))
@@ -476,10 +510,10 @@ namespace WaterWraithMod.Scripts
             if (maxDistanceFound == 0)
             {
                 WaterWraithMod.Logger.LogInfo($"Wraith cornnered!");
-                SwitchToBehaviourClientRpc(3);
-                timeBeingScared = 0;
                 if (!isVurable.Value)
                 {
+                    SwitchToBehaviourClientRpc(3);
+                    timeBeingScared = 0;
                     isVurable.Value = true;
                 }
             }
