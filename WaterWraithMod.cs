@@ -86,10 +86,10 @@ namespace WaterWraithMod
                 "WaterWraith",
                 "Per-Moon Spawn Chance",
                 "7510 Zeranos:0,61 March:35",
-                "The chance for a Water Wraith to spawn per moon these values will override"+
-                " the base spawn chance when spawning on a moon in the list."+
-                " (Formatted just like Lethal Level Loader's configs)"+
-                " (sperate with commas no spaces inbetween sperate moonnames and spawn chances with colons)"+
+                "The chance for a Water Wraith to spawn per moon these values will override" +
+                " the base spawn chance when spawning on a moon in the list." +
+                " (Formatted just like Lethal Level Loader's configs)" +
+                " (sperate with commas no spaces inbetween sperate moonnames and spawn chances with colons)" +
                 " (moonname1:25,moonname2:35,moonname3:55...) (0-100)"
             );
 
@@ -188,15 +188,118 @@ namespace WaterWraithMod
             return Chainloader.PluginInfos.ContainsKey(pluginGUID);
         }
 
+
+        private void NetcodePatcher()
+        {
+            Type[] types = GetTypesWithErrorHandling();
+            foreach (var type in types)
+            {
+                try
+                {
+                    var methods = type.GetMethods(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
+                    foreach (var method in methods)
+                    {
+                        try
+                        {
+                            var attributes = method.GetCustomAttributes(typeof(RuntimeInitializeOnLoadMethodAttribute), false);
+                            if (attributes.Length > 0)
+                            {
+                                method.Invoke(null, null);
+                            }
+                        }
+                        catch (Exception methodException)
+                        {
+                            Logger.LogWarning($"Error invoking method {method.Name} in type {type.FullName}: {methodException.Message}");
+                            if (methodException.InnerException != null)
+                            {
+                                Logger.LogWarning($"Inner exception: {methodException.InnerException.Message}");
+                            }
+                        }
+                    }
+                }
+                catch (Exception typeException)
+                {
+                    Logger.LogWarning($"Error processing type {type.FullName}: {typeException.Message}");
+                }
+            }
+
+            Logger.LogInfo("NetcodePatcher completed.");
+        }
+        public static List<Type> LibraryTypes = new List<Type>();
         internal static void Patch()
         {
             Harmony ??= new Harmony(MyPluginInfo.PLUGIN_GUID);
 
             Logger.LogDebug("Patching...");
 
-            Harmony.PatchAll();
+            try
+            {
+                // Get all types from the executing assembly
+                Type[] types = GetTypesWithErrorHandling();
+
+                // Patch everything except FilterEnemyTypesPatch
+                foreach (var type in types)
+                {
+                    if (!IsDependencyLoaded("NoteBoxz.LethalMin") && type == typeof(PurplePikminPatch))
+                    {
+                        continue;
+                    }
+                    try
+                    {
+                        Harmony.PatchAll(type);
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.LogError($"Error patching type {type.FullName}: {e.Message}");
+                        if (e.InnerException != null)
+                        {
+                            Logger.LogError($"Inner exception: {e.InnerException.Message}");
+                        }
+                    }
+                }
+
+                // Only patch FilterEnemyTypesPatch if LethalMon is loaded
+                if (IsDependencyLoaded("NoteBoxz.LethalMin"))  // Replace with actual LethalMon GUID
+                {
+                    Logger.LogInfo("LethalMin detected. Patching Purple Pikmin.");
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.LogError($"Error during patching process: {e.Message}");
+                if (e.InnerException != null)
+                {
+                    Logger.LogError($"Inner exception: {e.InnerException.Message}");
+                }
+            }
 
             Logger.LogDebug("Finished patching!");
+        }
+
+        private static Type[] GetTypesWithErrorHandling()
+        {
+            try
+            {
+                return Assembly.GetExecutingAssembly().GetTypes();
+            }
+            catch (ReflectionTypeLoadException e)
+            {
+                Logger.LogWarning("ReflectionTypeLoadException caught while getting types. Some types will be skipped.");
+                foreach (var loaderException in e.LoaderExceptions)
+                {
+                    Logger.LogWarning($"Loader Exception: {loaderException.Message}");
+                    if (loaderException is FileNotFoundException fileNotFound)
+                    {
+                        Logger.LogWarning($"Could not load file: {fileNotFound.FileName}");
+                    }
+                }
+                return e.Types.Where(t => t != null).ToArray();
+            }
+            catch (Exception e)
+            {
+                Logger.LogError($"Unexpected error while getting types: {e.Message}");
+                return new Type[0];
+            }
         }
 
         internal static void Unpatch()
@@ -206,23 +309,6 @@ namespace WaterWraithMod
             Harmony?.UnpatchSelf();
 
             Logger.LogDebug("Finished unpatching!");
-        }
-
-        private void NetcodePatcher()
-        {
-            var types = Assembly.GetExecutingAssembly().GetTypes();
-            foreach (var type in types)
-            {
-                var methods = type.GetMethods(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
-                foreach (var method in methods)
-                {
-                    var attributes = method.GetCustomAttributes(typeof(RuntimeInitializeOnLoadMethodAttribute), false);
-                    if (attributes.Length > 0)
-                    {
-                        method.Invoke(null, null);
-                    }
-                }
-            }
         }
     }
 }

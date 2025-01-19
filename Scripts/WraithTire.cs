@@ -63,10 +63,10 @@ namespace WaterWraithMod.Scripts
                 {
                     objectsInTriggerWDelay[key] += Time.deltaTime * WaterWraithMod.PlayerCollisionBufferMultiplier.Value;
                 }
-                WaterWraithMod.Logger.LogInfo($"Buffering collision with {other.name} for {objectsInTriggerWDelay[key]} seconds...");
+                //WaterWraithMod.Logger.LogInfo($"Buffering collision with {other.name} for {objectsInTriggerWDelay[key]} seconds...");
                 if (objectsInTriggerWDelay[key] >= collisionDelay)
                 {
-                    WaterWraithMod.Logger.LogInfo($"Hitting collision with {other.name} for {objectsInTriggerWDelay[key]}");
+                    //WaterWraithMod.Logger.LogInfo($"Hitting collision with {other.name} for {objectsInTriggerWDelay[key]}");
                     HandleCollision(key);
                     objectsInTriggerWDelay[key] = 0f;
                 }

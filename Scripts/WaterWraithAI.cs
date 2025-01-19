@@ -263,12 +263,12 @@ namespace WaterWraithMod.Scripts
             {
                 return;
             }
-            enemyHP -= force;
-            timeBeingScared += Random.Range(0.0f, 1);
             if (isEnemyDead || inSpecialAnimation)
             {
                 return;
             }
+            enemyHP -= force;
+            timeBeingScared += Random.Range(0.0f, 1);
             if (enemyHP <= 0)
             {
                 if (!HasLostTires)
@@ -460,8 +460,11 @@ namespace WaterWraithMod.Scripts
             {
                 if (WaterWraithMod.IsDependencyLoaded("NoteBoxz.LethalMin") && LETHALMIN_ISRESISTANTTOCRUSH(enemy))
                 {
+                    TargetedEnemies.Add(enemy);
+                    WaterWraithMod.Logger.LogInfo($"Cannot Hit Pikmin: {enemy.name}");
                     return;
                 }
+                WaterWraithMod.Logger.LogInfo($"Hitting enemy: {enemy.name}");
                 int HPbeforeHit = enemy.enemyHP;
                 enemy.HitEnemyServerRpc(WaterWraithMod.EDamageConfig.Value, -1, true);
 
