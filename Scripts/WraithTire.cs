@@ -19,10 +19,21 @@ namespace WaterWraithMod.Scripts
 
         private void OnTriggerEnter(Collider other)
         {
-            if(!enabled){return;}
-            PlayerControllerB player = other.GetComponent<PlayerControllerB>();
-            EnemyAI enemy = other.GetComponent<EnemyAI>();
-            if (player == null && enemy == null)
+            if (!enabled) { return; }
+            bool NullA = false;
+            bool NullB = false;
+            EnemyAICollisionDetect dt = other.GetComponent<EnemyAICollisionDetect>();
+
+            if (dt == null || dt.mainScript == null || dt.mainScript.enemyType == ai.enemyType)
+            {
+                NullA = true;
+            }
+            if (other.GetComponent<PlayerControllerB>() == null)
+            {
+                NullB = true;
+            }
+
+            if (NullA && NullB)
             {
                 return;
             }
@@ -40,14 +51,22 @@ namespace WaterWraithMod.Scripts
 
         private void OnTriggerStay(Collider other)
         {
-            if(!enabled){return;}
+            if (!enabled) { return; }
             Collider key = other;
             if (objectsInTriggerWDelay.ContainsKey(other))
             {
-                objectsInTriggerWDelay[key] += Time.deltaTime;
+                if (other.CompareTag("Enemy"))
+                {
+                    objectsInTriggerWDelay[key] += Time.deltaTime * 0.35f;
+                }
+                else
+                {
+                    objectsInTriggerWDelay[key] += Time.deltaTime * WaterWraithMod.PlayerCollisionBufferMultiplier.Value;
+                }
                 WaterWraithMod.Logger.LogInfo($"Buffering collision with {other.name} for {objectsInTriggerWDelay[key]} seconds...");
                 if (objectsInTriggerWDelay[key] >= collisionDelay)
                 {
+                    WaterWraithMod.Logger.LogInfo($"Hitting collision with {other.name} for {objectsInTriggerWDelay[key]}");
                     HandleCollision(key);
                     objectsInTriggerWDelay[key] = 0f;
                 }
@@ -56,7 +75,7 @@ namespace WaterWraithMod.Scripts
 
         private void HandleCollision(Collider other)
         {
-            if(!enabled){return;}
+            if (!enabled) { return; }
             PlayerControllerB player = other.GetComponent<PlayerControllerB>();
             if (player != null && !player.isPlayerDead)
             {
@@ -64,7 +83,7 @@ namespace WaterWraithMod.Scripts
             }
             else
             {
-                EnemyAI enemy = other.GetComponent<EnemyAI>();
+                EnemyAI? enemy = other.GetComponent<EnemyAICollisionDetect>()?.mainScript;
                 if (enemy != null && !enemy.isEnemyDead)
                 {
                     ai.DamageEnemy(enemy);

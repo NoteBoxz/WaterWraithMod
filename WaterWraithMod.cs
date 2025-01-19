@@ -29,6 +29,7 @@ namespace WaterWraithMod
         public static ConfigEntry<int> DamageConfig = null!;
         public static ConfigEntry<int> EDamageConfig = null!;
         public static ConfigEntry<string> PerMoonSpawnChanceConfig = null!;
+        public static ConfigEntry<float> PlayerCollisionBufferMultiplier = null!;
         public static ConfigEntry<WraithSpawnPosition> WraithSpawnPositionConfig = null!;
         public static ConfigEntry<GameStle> gameStleConfig = null!;
         public static Dictionary<string, float> GetParsedMoonSpawn()
@@ -117,6 +118,13 @@ namespace WaterWraithMod
                 "Damage",
                 50,
                 "The ammount of damage the water wraith deals.(0-100)"
+            );
+
+            PlayerCollisionBufferMultiplier = Config.Bind(
+                "WaterWraith",
+                "Collision Buffer",
+                1.0f,
+                "Multiplies the timer that is used to buffer damage players, higher values = instant death"
             );
 
             EDamageConfig = Config.Bind(

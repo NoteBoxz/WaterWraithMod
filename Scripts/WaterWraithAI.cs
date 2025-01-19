@@ -25,10 +25,12 @@ namespace WaterWraithMod.Scripts
         public bool HasLostTires;
         public Vector3 FleePos;
         public NetworkVariable<bool> isVurable = new NetworkVariable<bool>(false);
+        public NetworkVariable<bool> isRunning = new NetworkVariable<bool>(false);
         float timeSinceHitting;
         float timeInEnemyChase;
         float timeBeingScared;
         public GameObject[] TireObjectsToDisable = [];
+        public Collider[] ColidersToDisable = [];
         TireFragments[] TireObjectsToEnable = [];
         public PlayerControllerB PlayerFleeingFrom = null!;
         public PlayerControllerB PlayerStunnedBy = null!;
@@ -108,9 +110,9 @@ namespace WaterWraithMod.Scripts
                     }
                     List<GameObject> enemyObjects = RoundManager.Instance.SpawnedEnemies.
                     Where(enemy => enemy != null && enemy.enemyType != enemyType && !TargetedEnemies.Contains(enemy)).Select(enemy => enemy.gameObject).ToList();
-                    if (CheckLineOfSight(enemyObjects, 360, 15)
-                        && CanEnterState2
-                        && WaterWraithMod.ChaseEnemyConfig.Value)
+                    if (WaterWraithMod.ChaseEnemyConfig.Value
+                        && CheckLineOfSight(enemyObjects, 360, 15)
+                        && CanEnterState2)
                     {
                         if (CheckLineOfSight(enemyObjects, 360, 15).GetComponentInChildren<EnemyAI>() != null)
                         {
@@ -183,7 +185,7 @@ namespace WaterWraithMod.Scripts
                             StopSearch(roamFactory);
                             IsWandering = false;
                         }
-                        agent.speed = 15;
+                        agent.speed = 7f;
                         agent.acceleration = 999;
                         agent.angularSpeed = 300;
                         SetDestinationToPosition(FleePos);
@@ -257,9 +259,13 @@ namespace WaterWraithMod.Scripts
         public override void HitEnemy(int force = 1, PlayerControllerB playerWhoHit = null!, bool playHitSFX = false, int hitID = -1)
         {
             base.HitEnemy(force, playerWhoHit, playHitSFX, hitID);
+            if (!isVurable.Value)
+            {
+                return;
+            }
             enemyHP -= force;
-            timeBeingScared += 1;
-            if (isEnemyDead || inSpecialAnimation || !isVurable.Value)
+            timeBeingScared += Random.Range(0.0f, 1);
+            if (isEnemyDead || inSpecialAnimation)
             {
                 return;
             }
@@ -267,13 +273,12 @@ namespace WaterWraithMod.Scripts
             {
                 if (!HasLostTires)
                 {
-                    if (IsServer)
-                        RemoveTiresClientRpc();
+                    //if (IsServer)
+                    RemoveTiresServerRpc();
                 }
                 else
                 {
-                    if (IsServer)
-                        KillWraithClientRpc();
+                    KillWraithServerRpc();
                 }
             }
         }
@@ -282,23 +287,38 @@ namespace WaterWraithMod.Scripts
         {
             base.HitFromExplosion(distance);
             WaterWraithMod.Logger.LogInfo($"Wraith kabboom!");
-            if (!isVurable.Value)
-            {
-                SwitchToBehaviourClientRpc(3);
-                timeBeingScared = 0;
-                isVurable.Value = true;
-            }
+            SetScaredServerRpc();
         }
         public override void SetEnemyStunned(bool setToStunned, float setToStunTime = 1, PlayerControllerB setStunnedByPlayer = null!)
         {
             base.SetEnemyStunned(setToStunned, setToStunTime, setStunnedByPlayer);
             if (!setToStunned) { return; }
             WaterWraithMod.Logger.LogInfo($"Wraith cstuned!");
+            SetScaredServerRpc();
+        }
+        [ServerRpc(RequireOwnership = false)]
+        public void RemoveTiresServerRpc()
+        {
+            WaterWraithMod.Logger.LogInfo($"Removing On Serer");
+            if (!inSpecialAnimation && !HasLostTires)
+            {
+                RemoveTiresClientRpc();
+            }
+        }
+
+        [ServerRpc(RequireOwnership = false)]
+        public void SetScaredServerRpc()
+        {
             if (!isVurable.Value)
             {
+                WaterWraithMod.Logger.LogInfo($"SetScared");
                 SwitchToBehaviourClientRpc(3);
                 timeBeingScared = 0;
                 isVurable.Value = true;
+            }
+            else
+            {
+                WaterWraithMod.Logger.LogInfo($"Already scared");
             }
         }
 
@@ -322,7 +342,7 @@ namespace WaterWraithMod.Scripts
                 IsWandering = false;
             }
             targetPlayer = null;
-            enemyHP = 14;
+            enemyHP = 10;
             inSpecialAnimation = true;
             moveAud.volume = 0;
             HasLostTires = true;
@@ -337,6 +357,10 @@ namespace WaterWraithMod.Scripts
                 GameObject Go = frag.gameObject;
                 Go.SetActive(true);
                 Go.transform.SetParent(null, true);
+            }
+            foreach (Collider col in ColidersToDisable)
+            {
+                col.enabled = false;
             }
             foreach (WraithTire Wtire in Tires)
             {
@@ -354,6 +378,17 @@ namespace WaterWraithMod.Scripts
 
         }
 
+
+        [ServerRpc(RequireOwnership = false)]
+        public void KillWraithServerRpc()
+        {
+            if (!inSpecialAnimation && !isEnemyDead)
+            {
+                WaterWraithMod.Logger.LogInfo("Killing Wraith");
+
+                KillWraithClientRpc();
+            }
+        }
 
         [ClientRpc]
         public void KillWraithClientRpc()
@@ -381,22 +416,43 @@ namespace WaterWraithMod.Scripts
             }
             if (player != null)
             {
-                Vector3 backDirection = player.transform.forward;
-                player.DamagePlayer(WaterWraithMod.DamageConfig.Value, true, true, CauseOfDeath.Crushing, 1, false, backDirection * 5);
+                //Create a vector 3 that is pointed away from the water wraith's direciton
+                Vector3 backDirection = (player.transform.position - transform.position).normalized;
+
+                player.DamagePlayer(WaterWraithMod.DamageConfig.Value, true, true, CauseOfDeath.Crushing, 1, false, -backDirection * 5);
                 if (player.isPlayerDead)
                 {
                     creatureSFX.PlayOneShot(KillSFX);
                 }
                 else
                 {
-                    player.externalForceAutoFade += -backDirection * 5;
+                    player.externalForceAutoFade += backDirection * 7;
                 }
             }
         }
 
+        public override void OnCollideWithPlayer(Collider other)
+        {
+            base.OnCollideWithPlayer(other);
+
+            PlayerControllerB player = other.GetComponent<PlayerControllerB>();
+            if (player != null && HasLostTires && !isVurable.Value && isRunning.Value)
+            {
+                player.DamagePlayer(0);
+                Vector3 backDirection = (player.transform.position - transform.position).normalized;
+                player.externalForceAutoFade += backDirection * 2.5f;
+            }
+        }
+
+
+
         public void DamageEnemy(EnemyAI enemy)
         {
             if (isVurable.Value)
+            {
+                return;
+            }
+            if (!IsServer)
             {
                 return;
             }
@@ -406,13 +462,17 @@ namespace WaterWraithMod.Scripts
                 {
                     return;
                 }
-
-                enemy.HitEnemy(WaterWraithMod.EDamageConfig.Value, null, true);
+                int HPbeforeHit = enemy.enemyHP;
+                enemy.HitEnemyServerRpc(WaterWraithMod.EDamageConfig.Value, -1, true);
 
                 if (!enemy.isEnemyDead)
                     enemy.stunNormalizedTimer += UnityEngine.Random.Range(0f, 1f);
 
-                TargetedEnemies.Add(enemy);
+                if (HPbeforeHit == enemy.enemyHP)
+                {
+                    WaterWraithMod.Logger.LogInfo($"Water Wraith has determined that {enemy.name} is unkillable");
+                    TargetedEnemies.Add(enemy);
+                }
             }
         }
         public bool LETHALMIN_ISRESISTANTTOCRUSH(EnemyAI ai)
@@ -446,6 +506,7 @@ namespace WaterWraithMod.Scripts
 
                 creatureAnimator.SetBool("Moving", agent.velocity.normalized.magnitude > 0.1f);
                 creatureAnimator.SetBool("IsRunning", HasLostTires && FleePos != Vector3.zero);
+                isRunning.Value = HasLostTires && FleePos != Vector3.zero;
             }
             else
             {
@@ -464,6 +525,7 @@ namespace WaterWraithMod.Scripts
                         moveAud.volume = 0f;
                     creatureAnimator.SetBool("Moving", false);
                 }
+                creatureAnimator.SetBool("IsRunning", HasLostTires && isRunning.Value);
             }
 
             creatureAnimator.SetBool("IsScared", isVurable.Value);
@@ -510,12 +572,7 @@ namespace WaterWraithMod.Scripts
             if (maxDistanceFound == 0)
             {
                 WaterWraithMod.Logger.LogInfo($"Wraith cornnered!");
-                if (!isVurable.Value)
-                {
-                    SwitchToBehaviourClientRpc(3);
-                    timeBeingScared = 0;
-                    isVurable.Value = true;
-                }
+                SetScaredServerRpc();
             }
             else
             {
