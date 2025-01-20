@@ -472,9 +472,9 @@ namespace WaterWraithMod.Scripts
                 if (!enemy.isEnemyDead)
                     enemy.stunNormalizedTimer += UnityEngine.Random.Range(0f, 1f);
 
-                if (HPbeforeHit == enemy.enemyHP)
+                if (HPbeforeHit == enemy.enemyHP && enemy == TargetEnemy)
                 {
-                    WaterWraithMod.Logger.LogInfo($"Water Wraith has determined that {enemy.name} is unkillable");
+                    WaterWraithMod.Logger.LogInfo($"Water Wraith has determined that target enemy {enemy.name} is unkillable");
                     TargetedEnemies.Add(enemy);
                 }
             }
