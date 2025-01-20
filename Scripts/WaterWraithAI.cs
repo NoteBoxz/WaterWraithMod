@@ -355,7 +355,8 @@ namespace WaterWraithMod.Scripts
             foreach (TireFragments frag in TireObjectsToEnable)
             {
                 GameObject Go = frag.gameObject;
-                Go.SetActive(true);
+                if (Go.transform.parent.gameObject.activeSelf)
+                    Go.SetActive(true);
                 Go.transform.SetParent(null, true);
             }
             foreach (Collider col in ColidersToDisable)

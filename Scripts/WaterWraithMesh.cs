@@ -24,6 +24,7 @@ public class WaterWraithMeshOverride
 public class WaterWraithMesh : MonoBehaviour
 {
     public List<WaterWraithMeshOverride> overrides = new List<WaterWraithMeshOverride>();
+    public WaterWraithMeshOverride curoverride = null!;
     public WaterWraithAI AI = null!;
     int IndexBuffering = -1;
 
@@ -33,6 +34,10 @@ public class WaterWraithMesh : MonoBehaviour
         {
             IndexBuffering = index;
             StartCoroutine(WaitToSwitchOverride());
+            return;
+        }
+        if (AI.isEnemyDead)
+        {
             return;
         }
         for (int i = 0; i < overrides.Count; i++)
@@ -45,6 +50,23 @@ public class WaterWraithMesh : MonoBehaviour
                 AI.skinnedMeshRenderers = waterWraithMeshOverride.skinnedMeshRenderers;
                 AI.creatureAnimator = waterWraithMeshOverride.Anim;
                 AI.moveAud = waterWraithMeshOverride.MoveAudioSource;
+                string[] boolnames = { "Moving", "HasLostRollers", "IsRunning", "IsScared" };
+                if (curoverride != null && curoverride.Anim != null)
+                {
+                    foreach (string str in boolnames)
+                    {
+                        try
+                        {
+                            WaterWraithMod.WaterWraithMod.Logger.LogInfo($"Setting {str} to {curoverride.Anim.GetBool(str)}");
+                            waterWraithMeshOverride.Anim.SetBool(str, curoverride.Anim.GetBool(str));
+                        }
+                        catch(Exception e)
+                        {
+                            WaterWraithMod.WaterWraithMod.Logger.LogError($"Failed to set {str} to {curoverride.Anim.GetBool(str)} due to: {e}");
+                        }
+                    }
+                }
+                curoverride = waterWraithMeshOverride;
             }
             else
             {
