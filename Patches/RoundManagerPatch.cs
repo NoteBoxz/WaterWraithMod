@@ -121,8 +121,13 @@ namespace WaterWraithMod.Patches
 
                     if (SpawnableIndex == -1)
                     {
-                        WaterWraithMod.Logger.LogError("No WaterWraith found in the enemies list!");
-                        return;
+                        WaterWraithMod.Logger.LogWarning("No WaterWraith found in the enemies list! Injecting...");
+                        SpawnableEnemyWithRarity waterRare = new SpawnableEnemyWithRarity();
+                        waterRare.enemyType = WraithEnemy;
+                        waterRare.rarity = 0;
+                        __instance.currentLevel.Enemies.Add(waterRare);
+                        SpawnableIndex = __instance.currentLevel.Enemies.IndexOf(waterRare);
+                        WaterWraithMod.Logger.LogInfo($"WaterWraith added to the enemies list at index {SpawnableIndex}");
                     }
 
                     int RNG = UnityEngine.Random.Range(0, 100);
