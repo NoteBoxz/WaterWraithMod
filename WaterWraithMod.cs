@@ -41,6 +41,11 @@ namespace WaterWraithMod
             }
             foreach (var item in PerMoonSpawnChanceConfig.Value.Split(',').ToList())
             {
+                if(string.IsNullOrEmpty(item)){
+                    Logger.LogWarning($"Empty item found in PerMoonSpawnChanceConfig."+
+                    " please do not have empty items in your config.");
+                    continue;
+                }
                 string[] parts = item.Split(':');
                 float f;
                 if (float.TryParse(parts[1], out f))
