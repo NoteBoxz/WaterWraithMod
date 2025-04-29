@@ -484,7 +484,7 @@ namespace WaterWraithMod.Scripts
             PikminAI Pai = ai.GetComponent<PikminAI>();
             if (Pai != null)
             {
-                return LethalMin.LethalMin.IsPikminResistantToHazard(Pai.PminType, HazardType.Crush);
+                return LethalMin.Utils.PikminChecks.IsPikminResistantToHazard(Pai, PikminHazard.Crush, this);
             }
             return false;
         }

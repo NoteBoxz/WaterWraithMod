@@ -7,12 +7,12 @@ using WaterWraithMod.Scripts;
 
 namespace WaterWraithMod.Patches
 {
-    [HarmonyPatch(typeof(PurplePikmin))]
-    internal class PurplePikminPatch
+    [HarmonyPatch(typeof(PurplePikminAI))]
+    internal class PurplePikminAIPatch
     {
-        [HarmonyPatch("PlaySlamSFXClientRpc")]
+        [HarmonyPatch(nameof(PurplePikminAI.DoSlam))]
         [HarmonyPostfix]
-        public static void Init(PurplePikmin __instance)
+        public static void SlamDone(PurplePikminAI __instance)
         {
             if (!__instance.IsServer)
             {

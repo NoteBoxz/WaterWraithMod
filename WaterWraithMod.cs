@@ -245,10 +245,10 @@ namespace WaterWraithMod
                 // Patch everything except FilterEnemyTypesPatch
                 foreach (var type in types)
                 {
-                    if (!IsDependencyLoaded("NoteBoxz.LethalMin") && type == typeof(PurplePikminPatch))
-                    {
-                        continue;
-                    }
+                    // if (!IsDependencyLoaded("NoteBoxz.LethalMin") && type == typeof(PurplePikminAIPatch))
+                    // {
+                    //     continue;
+                    // }
                     try
                     {
                         Harmony.PatchAll(type);
