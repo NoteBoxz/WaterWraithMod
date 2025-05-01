@@ -3,39 +3,39 @@ using System.Collections.Generic;
 using GameNetcodeStuff;
 using UnityEngine;
 
-[Serializable]
-public class WraithProximityAnimEvent
-{
-    public bool CamShake;
-    public ScreenShakeType screenShakeTypeNear;
-    public float DistanceThresholdDistanceNear = 10;
-    public ScreenShakeType screenShakeTypeFar;
-    public float DistanceThresholdDistanceFar = 20;
-    public float FearFactor = -1;
-}
 public class WraithProximityAnimEventChecks : MonoBehaviour
 {
-    public List<WraithProximityAnimEvent> animEvents = new List<WraithProximityAnimEvent>();
-
-    public void DoCheck(int index)
+    public void DoShake()
     {
-        WraithProximityAnimEvent animEvent = animEvents[index];
-        PlayerControllerB player = StartOfRound.Instance.localPlayerController;
-        if (animEvent.CamShake)
+        PlayerControllerB player = GameNetworkManager.Instance.localPlayerController;
+        float distance = Vector3.Distance(transform.position, player.transform.position);
+        if (distance <= 20)
         {
-            if (Vector3.Distance(player.transform.position, transform.position) < animEvent.DistanceThresholdDistanceNear)
+            ScreenShakeType shakeType = 0;
+
+            // Determine shake intensity based on distance
+            if (distance <= 5)
             {
-                HUDManager.Instance.ShakeCamera(animEvent.screenShakeTypeNear);
+                shakeType = ScreenShakeType.VeryStrong;
             }
-            else if (Vector3.Distance(player.transform.position, transform.position) < animEvent.DistanceThresholdDistanceFar)
+            else if (distance <= 10)
             {
-                HUDManager.Instance.ShakeCamera(animEvent.screenShakeTypeFar);
+                shakeType = ScreenShakeType.Big;
             }
+            else
+            {
+                shakeType = ScreenShakeType.Small;
+            }
+
+            HUDManager.Instance.ShakeCamera(shakeType);
         }
-        if (animEvent.FearFactor > 0)
+    }
+
+    public void DoFear()
+    {
+        if (Vector3.Distance(transform.position, GameNetworkManager.Instance.localPlayerController.transform.position) < 16f)
         {
-            if (Vector3.Distance(player.transform.position, transform.position) < animEvent.DistanceThresholdDistanceFar)
-                player.JumpToFearLevel(animEvent.FearFactor, true);
+            GameNetworkManager.Instance.localPlayerController.JumpToFearLevel(1f, true);
         }
     }
 }

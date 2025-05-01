@@ -36,6 +36,8 @@ namespace WaterWraithMod.Scripts
         public PlayerControllerB PlayerStunnedBy = null!;
         public AudioClip[] DethSounds = [];
         public AudioClip[] HurtSounds = [];
+        public GameObject BaseColider = null!;
+        public GameObject PikminColider = null!;
         List<GameObject> chaseableEnemies => RoundManager.Instance.SpawnedEnemies.
         Where(enemy => enemy != null && enemy.enemyType != enemyType && !TargetedEnemies.Contains(enemy)).Select(enemy => enemy.gameObject).ToList();
         Vector3? LastPositionTargetWasSeen;
@@ -284,7 +286,7 @@ namespace WaterWraithMod.Scripts
                     agent.speed = 0;
                     agent.acceleration = 0;
                     agent.angularSpeed = 0;
-                    if (timeBeingScared > 5)
+                    if (timeBeingScared > WaterWraithMod.RecoveryTime.Value)
                     {
                         agent.speed = 3.5f;
                         agent.acceleration = 8;

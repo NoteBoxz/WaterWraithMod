@@ -29,16 +29,18 @@ namespace WaterWraithMod.Scripts
                 Destroy(trigger);
             }
             LatchTriggers.Clear();
-            foreach (Collider child in GetComponentsInChildren<Collider>(true))
+            foreach (WaterWraithMeshOverride WWMO in GetComponentsInChildren<WaterWraithMeshOverride>(true))
             {
-                if (child.name == "LethalMinLatchTrigger")
+                GameObject child = WWMO.PikminColider;
+
+                child.gameObject.SetActive(true);
+                PikminLatchTrigger latchTrigger = LethalMin.Patches.EnemyAIPatch.AddLatchTriggerToColider(child.gameObject, transform);
+                LatchTriggers.Add(latchTrigger);
+                if (child.activeSelf)
                 {
-                    child.gameObject.SetActive(true);
-                    enemyAICollisionDetect = child.gameObject.AddComponent<EnemyCollisionDetectHidden>();
-                    PikminLatchTrigger latchTrigger = LethalMin.Patches.EnemyAIPatch.AddLatchTriggerToColider(child.gameObject, transform);
-                    LatchTriggers.Add(latchTrigger);
-                    WaterWraithMod.Logger.LogInfo($"Added {child.name} to LatchTriggers");
+                    enemyAICollisionDetect = child.GetComponent<EnemyAICollisionDetect>();
                 }
+                WaterWraithMod.Logger.LogInfo($"Added {child.name} to LatchTriggers");
             }
         }
 

@@ -41,6 +41,7 @@ namespace WaterWraithMod
         public static ConfigEntry<float> EnemyChaseExitDistanceThreshold = null!;
         public static ConfigEntry<float> EnemyChaseTimer = null!;
         public static ConfigEntry<float> PlayerOutOfLOSTimer = null!;
+        public static ConfigEntry<float> RecoveryTime = null!;
         public static ConfigEntry<bool> KnowWherePlayerIsWhenOutOfLOS = null!;
         public static ConfigEntry<GameGeneration> GameGenerationConfig = null!;
         public static Dictionary<string, float> GetParsedMoonSpawn()
@@ -97,6 +98,20 @@ namespace WaterWraithMod
 
         public void BindConfigs()
         {
+            GameGenerationConfig = Config.Bind(
+                "Water Wraith",
+                "Game Generation",
+                GameGeneration.Pikmin4,
+                "The game generation of the water wraith."
+            );
+
+            RecoveryTime = Config.Bind(
+                "Water Wraith",
+                "Recovery Time",
+                10f,
+                "The time it takes for the water wraith to recover after being scared"
+            );
+
             SpawnChanceConfig = Config.Bind(
                 "Spawning",
                 "Spawn Chance",
@@ -161,13 +176,6 @@ namespace WaterWraithMod
                 "Enemy Damage",
                 1,
                 "The ammount of damage the water wraith deals to Enemies. Recomended: (1-3)"
-            );
-
-            GameGenerationConfig = Config.Bind(
-                "Water Wraith",
-                "Game Generation",
-                GameGeneration.Pikmin4,
-                "The game generation of the water wraith."
             );
 
             PlayerDetectionRange = Config.Bind(

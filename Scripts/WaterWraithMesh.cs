@@ -12,15 +12,6 @@ public enum GameGeneration
     Pikmin2,
 }
 
-[Serializable]
-public class WaterWraithMeshOverride
-{
-    public Animator Anim = null!;
-    public GameObject Object = null!;
-    public MeshRenderer[] meshRenderers = [];
-    public SkinnedMeshRenderer[] skinnedMeshRenderers = [];
-    public AudioSource MoveAudioSource = null!;
-}
 public class WaterWraithMesh : MonoBehaviour
 {
     public List<WaterWraithMeshOverride> overrides = new List<WaterWraithMeshOverride>();
@@ -50,6 +41,8 @@ public class WaterWraithMesh : MonoBehaviour
                 AI.skinnedMeshRenderers = waterWraithMeshOverride.skinnedMeshRenderers;
                 AI.creatureAnimator = waterWraithMeshOverride.Anim;
                 AI.moveAud = waterWraithMeshOverride.MoveAudioSource;
+                AI.BaseColider = waterWraithMeshOverride.BaseColider;
+                AI.PikminColider = waterWraithMeshOverride.PikminColider;
                 string[] boolnames = { "Moving", "HasLostRollers", "IsRunning", "IsScared" };
                 if (curoverride != null && curoverride.Anim != null)
                 {
