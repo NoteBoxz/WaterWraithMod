@@ -573,6 +573,18 @@ namespace WaterWraithMod.Scripts
         {
             if (ai is PikminAI Pai)
             {
+                WaterWraithPikminEnemy WWPE = GetComponent<WaterWraithPikminEnemy>();
+                if (WWPE.PikminImmune.Contains(Pai))
+                {
+                    if (Pai.PreviousIntention != Pintent.Knockedback && Pai.CurrentIntention != Pintent.Knockedback)
+                    {
+                        WWPE.PikminImmune.Remove(Pai);
+                    }
+                    else
+                    {
+                        return true;
+                    }
+                }
                 if (!LethalMin.Utils.PikminChecks.IsPikminResistantToHazard(Pai, PikminHazard.Crush, this))
                 {
                     Pai.DoSquishDeathNonAutoritiveServerRpc();

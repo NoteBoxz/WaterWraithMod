@@ -13,7 +13,8 @@ namespace WaterWraithMod.Scripts
     public class WaterWraithPikminEnemy : PikminEnemy
     {
         WaterWraithAI waterWraithAI = null!;
-        public EnemyAICollisionDetect enemyAICollisionDetect = null!;
+        public List<EnemyAICollisionDetect> enemyAICollisionDetects = null!;
+        public List<PikminAI> PikminImmune = new List<PikminAI>();
         protected override void Start()
         {
             base.Start();
@@ -36,26 +37,30 @@ namespace WaterWraithMod.Scripts
                 child.gameObject.SetActive(true);
                 PikminLatchTrigger latchTrigger = LethalMin.Patches.EnemyAIPatch.AddLatchTriggerToColider(child.gameObject, transform);
                 LatchTriggers.Add(latchTrigger);
-                if (child.activeSelf)
-                {
-                    enemyAICollisionDetect = child.GetComponent<EnemyAICollisionDetect>();
-                }
+                enemyAICollisionDetects.Add(child.GetComponent<EnemyAICollisionDetect>());
                 WaterWraithMod.Logger.LogInfo($"Added {child.name} to LatchTriggers");
             }
         }
 
-        protected override void Update()
+        protected void LateUpdate()
         {
-            base.Update();
             bool cba = waterWraithAI.isVurable.Value;
 
 
             if (CanBeAttacked && !waterWraithAI.isVurable.Value)
             {
-                LatchTriggers[0].RemoveAllPikmin(0);
+                PikminImmune.Clear();
+                foreach (PikminLatchTrigger trigger in LatchTriggers)
+                {
+                    PikminImmune.AddRange(trigger.PikminOnLatch);
+                    trigger.RemoveAllPikmin(0);
+                }
             }
             CanBeAttacked = cba;
-            enemyAICollisionDetect.enabled = cba;
+            foreach (EnemyAICollisionDetect EAICD in enemyAICollisionDetects)
+            {
+                EAICD.enabled = CanBeAttacked;
+            }
         }
     }
 }
