@@ -35,7 +35,13 @@ namespace WaterWraithMod
         public static ConfigEntry<float> PlayerCollisionBufferMultiplier = null!;
         public static ConfigEntry<WraithSpawnPosition> WraithSpawnPositionConfig = null!;
         public static ConfigEntry<float> WaterWaithSpawnPositionChance = null!;
-        public static ConfigEntry<GameStle> gameStleConfig = null!;
+        public static ConfigEntry<int> PlayerDetectionRange = null!;
+        public static ConfigEntry<float> EnemyDetectionRange = null!;
+        public static ConfigEntry<float> PlayerChaseExitDistanceThreshold = null!;
+        public static ConfigEntry<float> EnemyChaseExitDistanceThreshold = null!;
+        public static ConfigEntry<float> EnemyChaseTimer = null!;
+        public static ConfigEntry<float> PlayerOutOfLOSTimer = null!;
+        public static ConfigEntry<GameGeneration> GameGenerationConfig = null!;
         public static Dictionary<string, float> GetParsedMoonSpawn()
         {
             Dictionary<string, float> dict = new Dictionary<string, float>();
@@ -156,14 +162,56 @@ namespace WaterWraithMod
                 "The ammount of damage the water wraith deals to Enemies. Recomended: (1-3)"
             );
 
-            gameStleConfig = Config.Bind(
+            GameGenerationConfig = Config.Bind(
                 "WaterWraith",
                 "Game Stle",
-                GameStle.Pikmin4,
+                GameGeneration.Pikmin4,
                 "The game stle of the water wraith."
             );
 
-            gameStleConfig.SettingChanged += (sender, e) => { UpdateAllOverrides(); };
+            PlayerDetectionRange = Config.Bind(
+                "WaterWraith Detection",
+                "Player Detection Range",
+                15,
+                "The maximum range at which the Water Wraith can detect players. (in meters)"
+            );
+
+            EnemyDetectionRange = Config.Bind(
+                "WaterWraith Detection",
+                "Enemy Detection Range",
+                15f,
+                "The maximum range at which the Water Wraith can detect other enemies. (in meters)"
+            );
+
+            PlayerChaseExitDistanceThreshold = Config.Bind(
+                "WaterWraith Behavior",
+                "Player Chase Exit Distance",
+                30f,
+                "The distance a player needs to be from the Water Wraith to exit chase state. (in meters)"
+            );
+
+            EnemyChaseExitDistanceThreshold = Config.Bind(
+                "WaterWraith Behavior",
+                "Enemy Chase Exit Distance",
+                20f,
+                "The distance an enemy needs to be from the Water Wraith to exit chase state. (in meters)"
+            );
+
+            EnemyChaseTimer = Config.Bind(
+                "WaterWraith Timers",
+                "Enemy Chase Timer",
+                25f,
+                "The maximum time the Water Wraith will chase an enemy before losing interest. (in seconds)"
+            );
+
+            PlayerOutOfLOSTimer = Config.Bind(
+                "WaterWraith Timers",
+                "Player Out of LOS Timer",
+                10f,
+                "How long the Water Wraith will continue chasing a player after losing line of sight. (in seconds)"
+            );
+
+            GameGenerationConfig.SettingChanged += (sender, e) => { UpdateAllOverrides(); };
         }
 
         public void UpdateAllOverrides()
@@ -172,7 +220,7 @@ namespace WaterWraithMod
             {
                 foreach (WaterWraithMesh mesh in GameObject.FindObjectsOfType<WaterWraithMesh>())
                 {
-                    mesh.SetOverride((int)gameStleConfig.Value);
+                    mesh.SetOverride((int)GameGenerationConfig.Value);
                 }
             }
             catch (Exception ex)

@@ -6,7 +6,7 @@ using GameNetcodeStuff;
 using UnityEngine;
 using WaterWraithMod.Scripts;
 
-public enum GameStle
+public enum GameGeneration
 {
     Pikmin4,
     Pikmin2,

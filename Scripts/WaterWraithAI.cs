@@ -19,7 +19,7 @@ namespace WaterWraithMod.Scripts
         public WaterWraithMesh WMesh = null!;
         public AudioSource moveAud = null!;
         public AudioClip KillSFX = null!;
-        public bool IsChaseingEnemy = false;
+        public bool IsChasingEnemy = false;
         public bool IsWandering = false;
         public bool HasLostTires;
         public Vector3 FleePos;
@@ -27,6 +27,7 @@ namespace WaterWraithMod.Scripts
         public NetworkVariable<bool> isRunning = new NetworkVariable<bool>(false);
         float timeSinceHitting;
         float timeInEnemyChase;
+        float timeLostPlayer;
         float timeBeingScared;
         public GameObject[] TireObjectsToDisable = [];
         public Collider[] ColidersToDisable = [];
@@ -35,6 +36,9 @@ namespace WaterWraithMod.Scripts
         public PlayerControllerB PlayerStunnedBy = null!;
         public AudioClip[] DethSounds = [];
         public AudioClip[] HurtSounds = [];
+        List<GameObject> chaseableEnemies => RoundManager.Instance.SpawnedEnemies.
+        Where(enemy => enemy != null && enemy.enemyType != enemyType && !TargetedEnemies.Contains(enemy)).Select(enemy => enemy.gameObject).ToList();
+        Vector3? LastPositionTargetWasSeen;
         WraithTire[] Tires = [];
 
         public override void Start()
@@ -65,7 +69,7 @@ namespace WaterWraithMod.Scripts
             Tires = GetComponentsInChildren<WraithTire>(true);
             WaterWraithMod.Logger.LogInfo($"Tires: {Tires.Length}");
             WaterWraithMod.Logger.LogInfo($"DulyAbledTires: {TireObjectsToEnable.Length}");
-            WMesh.SetOverride((int)WaterWraithMod.gameStleConfig.Value);
+            WMesh.SetOverride((int)WaterWraithMod.GameGenerationConfig.Value);
             creatureAnimator.SetTrigger("Spawn");
             inSpecialAnimation = true;
             moveAud.volume = 0;
@@ -98,30 +102,26 @@ namespace WaterWraithMod.Scripts
                     }
 
                     //Chase Condisitions
-                    if (CheckLineOfSightForPlayer(360, 15))
+                    PlayerControllerB player = CheckLineOfSightForPlayer(-1, WaterWraithMod.PlayerDetectionRange.Value, WaterWraithMod.PlayerDetectionRange.Value);
+                    if (player)
                     {
                         StopSearch(roamWorld);
-                        SetMovingTowardsTargetPlayer(CheckLineOfSightForPlayer(360, 15));
+                        SetMovingTowardsTargetPlayer(player);
                         moveTowardsDestination = true;
-                        IsChaseingEnemy = false;
-                        WaterWraithMod.Logger.LogInfo("WaterWraith: Chasing player");
+                        IsChasingEnemy = false;
+                        WaterWraithMod.Logger.LogInfo($"WaterWraith: Chasing player {player.playerUsername}");
                         SwitchToBehaviourClientRpc(1);
                         break;
                     }
-                    List<GameObject> enemyObjects = RoundManager.Instance.SpawnedEnemies.
-                    Where(enemy => enemy != null && enemy.enemyType != enemyType && !TargetedEnemies.Contains(enemy)).Select(enemy => enemy.gameObject).ToList();
-                    if (WaterWraithMod.ChaseEnemyConfig.Value
-                        && CheckLineOfSight(enemyObjects, 360, 15))
+                    GameObject LOSCheck = CheckLineOfSight(chaseableEnemies, -1, (int)WaterWraithMod.EnemyDetectionRange.Value, WaterWraithMod.EnemyDetectionRange.Value);
+                    if (WaterWraithMod.ChaseEnemyConfig.Value && LOSCheck && LOSCheck.TryGetComponent(out EnemyAI ai))
                     {
-                        if (CheckLineOfSight(enemyObjects, 360, 15).GetComponentInChildren<EnemyAI>() != null)
-                        {
-                            StopSearch(roamWorld);
-                            TargetEnemy = CheckLineOfSight(enemyObjects, 360, 15).GetComponentInChildren<EnemyAI>();
-                            IsChaseingEnemy = true;
-                            timeInEnemyChase = 0;
-                            WaterWraithMod.Logger.LogInfo("WaterWraith: Chasing enemy");
-                            SwitchToBehaviourClientRpc(1);
-                        }
+                        StopSearch(roamWorld);
+                        TargetEnemy = ai;
+                        IsChasingEnemy = true;
+                        timeInEnemyChase = 0;
+                        WaterWraithMod.Logger.LogInfo($"WaterWraith: Chasing enemy {gameObject.name}");
+                        SwitchToBehaviourClientRpc(1);
                         break;
                     }
                     break;
@@ -133,7 +133,7 @@ namespace WaterWraithMod.Scripts
                     }
 
                     // Handle enemy chase logic
-                    if (IsChaseingEnemy)
+                    if (IsChasingEnemy)
                     {
                         string? stopChaseReason = null;
 
@@ -143,10 +143,10 @@ namespace WaterWraithMod.Scripts
                             stopChaseReason = "target enemy is dead";
                         else if (TargetedEnemies.Contains(TargetEnemy))
                             stopChaseReason = "target enemy already in targeted list";
-                        else if (Vector3.Distance(transform.position, TargetEnemy.transform.position) > 20f)
-                            stopChaseReason = "target enemy too far away (>20f)";
-                        else if (timeInEnemyChase > 25)
-                            stopChaseReason = "chase time exceeded (>25s)";
+                        else if (Vector3.Distance(transform.position, TargetEnemy.transform.position) > WaterWraithMod.EnemyChaseExitDistanceThreshold.Value)
+                            stopChaseReason = $"target enemy too far away (>{WaterWraithMod.EnemyChaseExitDistanceThreshold.Value}f)";
+                        else if (timeInEnemyChase > WaterWraithMod.EnemyChaseTimer.Value)
+                            stopChaseReason = $"chase time exceeded (>{WaterWraithMod.EnemyChaseTimer.Value}s)";
 
                         if (stopChaseReason != null)
                         {
@@ -155,8 +155,8 @@ namespace WaterWraithMod.Scripts
                                 TargetedEnemies.Add(TargetEnemy);
 
                             TargetEnemy = null!;
-                            IsChaseingEnemy = false;
-                            WaterWraithMod.Logger.LogInfo($"WaterWraith: stopped chasing enemy due to: {stopChaseReason}");
+                            IsChasingEnemy = false;
+                            WaterWraithMod.Logger.LogMessage($"WaterWraith: stopped chasing enemy due to: {stopChaseReason}");
                             MoveAwayFromMain();
                             SwitchToBehaviourClientRpc(0);
                             break;
@@ -168,7 +168,7 @@ namespace WaterWraithMod.Scripts
                     }
 
                     // Handle player chase logic
-                    if (!IsChaseingEnemy)
+                    if (!IsChasingEnemy)
                     {
                         string? stopChaseReason = null;
 
@@ -178,14 +178,43 @@ namespace WaterWraithMod.Scripts
                             stopChaseReason = "target player is dead";
                         else if (!targetPlayer.isPlayerControlled)
                             stopChaseReason = "target player not controlled";
-                        else if (Vector3.Distance(transform.position, targetPlayer.transform.position) > 30f)
-                            stopChaseReason = "target player too far away (>30f)";
+                        else if (Vector3.Distance(transform.position, targetPlayer.transform.position) > WaterWraithMod.PlayerChaseExitDistanceThreshold.Value)
+                            stopChaseReason = $"target player too far away (>{WaterWraithMod.PlayerChaseExitDistanceThreshold.Value}f)";
+                        if (stopChaseReason == null && targetPlayer != null && !CheckLineOfSightOnPlayer(targetPlayer, -1, WaterWraithMod.PlayerDetectionRange.Value, WaterWraithMod.PlayerDetectionRange.Value))
+                        {
+                            if (LastPositionTargetWasSeen == null)
+                            {
+                                LastPositionTargetWasSeen = targetPlayer.transform.position;
+                                WaterWraithMod.Logger.LogInfo($"WaterWraith: Player went of of LOS Last position was seen: {LastPositionTargetWasSeen}");
+                            }
+                            movingTowardsTargetPlayer = false;
+                            SetDestinationToPosition(LastPositionTargetWasSeen.Value);
+                            if (agent.remainingDistance < 2f)
+                            {
+                                stopChaseReason = "target player not in line of sight";
+                                LastPositionTargetWasSeen = null;
+                            }
+                            if (timeLostPlayer > WaterWraithMod.PlayerOutOfLOSTimer.Value)
+                            {
+                                stopChaseReason = $"target player out of LOS for too long (>{WaterWraithMod.PlayerOutOfLOSTimer.Value}s)";
+                                LastPositionTargetWasSeen = null;
+                            }
+                        }
+                        if (LastPositionTargetWasSeen != null)
+                        {
+                            PlayerControllerB? LOScheck = CheckLineOfSightForPlayer(-1, WaterWraithMod.PlayerDetectionRange.Value, WaterWraithMod.PlayerDetectionRange.Value);
+                            SetMovingTowardsTargetPlayer(LOScheck);
+                            moveTowardsDestination = true;
+                            LastPositionTargetWasSeen = null;
+                            WaterWraithMod.Logger.LogInfo($"WaterWraith: Player went of of LOS Last position was seen: {LastPositionTargetWasSeen}");
+                        }
 
                         if (stopChaseReason != null)
                         {
                             targetPlayer = null!;
                             movingTowardsTargetPlayer = false;
-                            WaterWraithMod.Logger.LogInfo($"WaterWraith: stopped chasing player due to: {stopChaseReason}");
+                            LastPositionTargetWasSeen = null;
+                            WaterWraithMod.Logger.LogMessage($"WaterWraith: stopped chasing player due to: {stopChaseReason}");
                             MoveAwayFromMain();
                             SwitchToBehaviourClientRpc(0);
                             break;
@@ -229,7 +258,7 @@ namespace WaterWraithMod.Scripts
                         StartSearch(transform.position, roamWorld);
                         IsWandering = true;
                     }
-                    PlayerControllerB b = CheckLineOfSightForPlayer(360, 15);
+                    PlayerControllerB b = CheckLineOfSightForPlayer(-1, 15, 15);
                     if (IsWandering && b)
                     {
                         FleePos = ChooseFarthestPositionFromPosition(b.transform.position);
@@ -270,6 +299,25 @@ namespace WaterWraithMod.Scripts
                     break;
             }
         }
+
+        public bool CheckLineOfSightOnPlayer(PlayerControllerB player, float width = 45f, int range = 60, int proximityAwareness = -1)
+        {
+            if (isOutside && !enemyType.canSeeThroughFog && TimeOfDay.Instance.currentLevelWeather == LevelWeatherType.Foggy)
+            {
+                range = Mathf.Clamp(range, 0, 30);
+            }
+            Vector3 position = player.transform.position;
+            if (Vector3.Distance(position, eye.position) < (float)range && !Physics.Linecast(eye.position, position, StartOfRound.Instance.collidersAndRoomMaskAndDefault, QueryTriggerInteraction.Ignore))
+            {
+                Vector3 to = position - eye.position;
+                if (Vector3.Angle(eye.forward, to) < width || (proximityAwareness != -1 && Vector3.Distance(eye.position, position) < (float)proximityAwareness))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
 
         public bool MoveAwayFromMain()
         {
@@ -342,6 +390,11 @@ namespace WaterWraithMod.Scripts
                 SwitchToBehaviourClientRpc(3);
                 timeBeingScared = 0;
                 isVurable.Value = true;
+                TargetEnemy = null!;
+                targetPlayer = null!;
+                IsChasingEnemy = false;
+                movingTowardsTargetPlayer = false;
+                LastPositionTargetWasSeen = null;
             }
             else
             {
@@ -368,6 +421,7 @@ namespace WaterWraithMod.Scripts
                 StopSearch(roamWorld);
                 IsWandering = false;
             }
+            LastPositionTargetWasSeen = null;
             targetPlayer = null;
             enemyHP = 10;
             inSpecialAnimation = true;
@@ -541,8 +595,10 @@ namespace WaterWraithMod.Scripts
             {
                 if (isVurable.Value)
                     timeBeingScared += Time.deltaTime;
-                if (IsChaseingEnemy)
+                if (IsChasingEnemy)
                     timeInEnemyChase += Time.deltaTime;
+                if (LastPositionTargetWasSeen != null)
+                    timeLostPlayer += Time.deltaTime;
                 if (!HasLostTires)
                     moveAud.volume = agent.velocity.normalized.magnitude;
 
