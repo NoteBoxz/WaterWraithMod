@@ -37,7 +37,7 @@ namespace WaterWraithMod.Patches
             // }
             foreach (string key in WaterWraithMod.GetParsedMoonSpawn().Keys)
             {
-                if (key.Contains(__instance.currentLevel.PlanetName))
+                if (__instance.currentLevel.PlanetName.Contains(key))
                 {
                     WaterWraithMod.GetParsedMoonSpawn().TryGetValue(key, out AIvalue);
                     WaterWraithMod.Logger.LogInfo($"override value: {AIvalue}");

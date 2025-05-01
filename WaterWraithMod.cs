@@ -97,14 +97,14 @@ namespace WaterWraithMod
         public void BindConfigs()
         {
             SpawnChanceConfig = Config.Bind(
-                "WaterWraith",
+                "Spawning",
                 "Spawn Chance",
                 25f,
                 "The chance for a Water Wraith to spawn. (0-100)"
             );
 
             PerMoonSpawnChanceConfig = Config.Bind(
-                "WaterWraith",
+                "Spawning",
                 "Per-Moon Spawn Chance",
                 "Zeranos:0,March:35",
                 "The chance for a Water Wraith to spawn per moon these values will override" +
@@ -115,97 +115,97 @@ namespace WaterWraithMod
             );
 
             ChaseEnemyConfig = Config.Bind(
-                "WaterWraith",
+                "Enemy Interaction",
                 "Chase Enemys",
                 true,
                 "Makes the water wraith chase enemies as well as players.");
 
             WraithSpawnPositionConfig = Config.Bind(
-                "WaterWraith",
+                "Spawning",
                 "Wraith Spawn Position",
                 WraithSpawnPosition.OnlyIndoors,
                 "The position where the Water Wraith will spawn."
             );
 
             WaterWaithSpawnPositionChance = Config.Bind(
-                "WaterWraith",
+                "Spawning",
                 "Spawn Position Chance",
                 50f,
                 "The chance for the Water Wraith to spawn outdoors or indoors if IndoorsAndOutdoors config is chosen, [0 = indoors] [100 = outdoors]. (0-100)"
             );
 
             SpawnTimerConfig = Config.Bind(
-                "WaterWraith",
+                "Spawning",
                 "Spawn Timer (Seconds)",
                 300f,
                 "The amount of time it takes for the wraith to spawn."
             );
 
             DamageConfig = Config.Bind(
-                "WaterWraith",
+                "Player Interaction",
                 "Damage",
                 50,
                 "The ammount of damage the water wraith deals.(0-100)"
             );
 
             PlayerCollisionBufferMultiplier = Config.Bind(
-                "WaterWraith",
+                "Player Interaction",
                 "Collision Buffer",
-                1.0f,
+                1.4f,
                 "Multiplies the timer that is used to buffer damage players, higher values = instant death"
             );
 
             EDamageConfig = Config.Bind(
-                "WaterWraith",
+                "Enemy Interaction",
                 "Enemy Damage",
                 1,
                 "The ammount of damage the water wraith deals to Enemies. Recomended: (1-3)"
             );
 
             GameGenerationConfig = Config.Bind(
-                "WaterWraith",
-                "Game Stle",
+                "Water Wraith",
+                "Game Generation",
                 GameGeneration.Pikmin4,
-                "The game stle of the water wraith."
+                "The game generation of the water wraith."
             );
 
             PlayerDetectionRange = Config.Bind(
-                "WaterWraith Detection",
+                "Player Interaction",
                 "Player Detection Range",
                 15,
                 "The maximum range at which the Water Wraith can detect players. (in meters)"
             );
 
             EnemyDetectionRange = Config.Bind(
-                "WaterWraith Detection",
+                "Enemy Interaction",
                 "Enemy Detection Range",
                 15f,
                 "The maximum range at which the Water Wraith can detect other enemies. (in meters)"
             );
 
             PlayerChaseExitDistanceThreshold = Config.Bind(
-                "WaterWraith Behavior",
+                "Player Interaction",
                 "Player Chase Exit Distance",
                 30f,
                 "The distance a player needs to be from the Water Wraith to exit chase state. (in meters)"
             );
 
             EnemyChaseExitDistanceThreshold = Config.Bind(
-                "WaterWraith Behavior",
+                "Enemy Interaction",
                 "Enemy Chase Exit Distance",
                 20f,
                 "The distance an enemy needs to be from the Water Wraith to exit chase state. (in meters)"
             );
 
             EnemyChaseTimer = Config.Bind(
-                "WaterWraith Timers",
+                "Enemy Interaction",
                 "Enemy Chase Timer",
                 25f,
                 "The maximum time the Water Wraith will chase an enemy before losing interest. (in seconds)"
             );
 
             PlayerOutOfLOSTimer = Config.Bind(
-                "WaterWraith Timers",
+                "Player Interaction",
                 "Player Out of LOS Timer",
                 10f,
                 "How long the Water Wraith will continue chasing a player after losing line of sight. (in seconds)"
