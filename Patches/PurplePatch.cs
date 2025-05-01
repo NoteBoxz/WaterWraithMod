@@ -14,11 +14,6 @@ namespace WaterWraithMod.Patches
         [HarmonyPostfix]
         public static void SlamDone(PurplePikminAI __instance)
         {
-            if (!__instance.IsServer)
-            {
-                return;
-            }
-
             foreach (WaterWraithAI wraith in GameObject.FindObjectsOfType<WaterWraithAI>())
             {
                 if (Vector3.Distance(wraith.transform.position, __instance.transform.position) < 10f)

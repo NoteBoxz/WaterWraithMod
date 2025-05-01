@@ -10,6 +10,8 @@ using WaterWraithMod.Patches;
 using BepInEx.Bootstrap;
 using System.Collections.Generic;
 using System.Linq;
+using WaterWraithMod.Scripts;
+using LethalMin;
 
 namespace WaterWraithMod
 {
@@ -22,6 +24,7 @@ namespace WaterWraithMod
         internal new static ManualLogSource Logger { get; private set; } = null!;
         internal static Harmony? Harmony { get; set; }
         internal static AssetBundle assetBundle { get; private set; } = null!;
+        internal static EnemyType WraithEnemyType { get; private set; } = null!;
 
         public static ConfigEntry<float> SpawnChanceConfig = null!;
         public static ConfigEntry<float> SpawnTimerConfig = null!;
@@ -31,6 +34,7 @@ namespace WaterWraithMod
         public static ConfigEntry<string> PerMoonSpawnChanceConfig = null!;
         public static ConfigEntry<float> PlayerCollisionBufferMultiplier = null!;
         public static ConfigEntry<WraithSpawnPosition> WraithSpawnPositionConfig = null!;
+        public static ConfigEntry<float> WaterWaithSpawnPositionChance = null!;
         public static ConfigEntry<GameStle> gameStleConfig = null!;
         public static Dictionary<string, float> GetParsedMoonSpawn()
         {
@@ -41,8 +45,9 @@ namespace WaterWraithMod
             }
             foreach (var item in PerMoonSpawnChanceConfig.Value.Split(',').ToList())
             {
-                if(string.IsNullOrEmpty(item)){
-                    Logger.LogWarning($"Empty item found in PerMoonSpawnChanceConfig."+
+                if (string.IsNullOrEmpty(item))
+                {
+                    Logger.LogWarning($"Empty item found in PerMoonSpawnChanceConfig." +
                     " please do not have empty items in your config.");
                     continue;
                 }
@@ -75,6 +80,11 @@ namespace WaterWraithMod
 
             RegisterRockAssets();
 
+            if (IsDependencyLoaded("NoteBoxz.LethalMin"))
+            {
+                LETHALMIN_AddDef();
+            }
+
             Logger.LogInfo($"{MyPluginInfo.PLUGIN_GUID} v{MyPluginInfo.PLUGIN_VERSION} has loaded!");
         }
 
@@ -90,7 +100,7 @@ namespace WaterWraithMod
             PerMoonSpawnChanceConfig = Config.Bind(
                 "WaterWraith",
                 "Per-Moon Spawn Chance",
-                "7510 Zeranos:0,61 March:35",
+                "Zeranos:0,March:35",
                 "The chance for a Water Wraith to spawn per moon these values will override" +
                 " the base spawn chance when spawning on a moon in the list." +
                 " (Formatted just like Lethal Level Loader's configs)" +
@@ -109,6 +119,13 @@ namespace WaterWraithMod
                 "Wraith Spawn Position",
                 WraithSpawnPosition.OnlyIndoors,
                 "The position where the Water Wraith will spawn."
+            );
+
+            WaterWaithSpawnPositionChance = Config.Bind(
+                "WaterWraith",
+                "Spawn Position Chance",
+                50f,
+                "The chance for the Water Wraith to spawn outdoors or indoors if IndoorsAndOutdoors config is chosen, [0 = indoors] [100 = outdoors]. (0-100)"
             );
 
             SpawnTimerConfig = Config.Bind(
@@ -136,7 +153,7 @@ namespace WaterWraithMod
                 "WaterWraith",
                 "Enemy Damage",
                 1,
-                "The ammount of damage the water wraith deals to Enemies. Recomended: (0-2)"
+                "The ammount of damage the water wraith deals to Enemies. Recomended: (1-3)"
             );
 
             gameStleConfig = Config.Bind(
@@ -183,9 +200,15 @@ namespace WaterWraithMod
 
         internal static void RegisterRockAssets()
         {
-            EnemyType WraithEnemy = assetBundle.LoadAsset<EnemyType>("Assets/ModAsset/WaterType.asset");
+            WraithEnemyType = assetBundle.LoadAsset<EnemyType>("Assets/ModAsset/WaterType.asset");
             TerminalNode WraithNode = assetBundle.LoadAsset<TerminalNode>("Assets/ModAsset/WaterNode.asset");
-            LethalLib.Modules.Enemies.RegisterEnemy(WraithEnemy, 0, LethalLib.Modules.Levels.LevelTypes.All, WraithNode, null!);
+            LethalLib.Modules.Enemies.RegisterEnemy(WraithEnemyType, 0, LethalLib.Modules.Levels.LevelTypes.All, WraithNode, null!);
+        }
+
+        internal static void LETHALMIN_AddDef()
+        {
+            CustomPikminEnemyOverrideDef def = WraithEnemyType.enemyPrefab.AddComponent<CustomPikminEnemyOverrideDef>();
+            def.CustomPikminEnemyOverrideType = typeof(WaterWraithPikminEnemy);
         }
 
         public static bool IsDependencyLoaded(string pluginGUID)
@@ -245,10 +268,11 @@ namespace WaterWraithMod
                 // Patch everything except FilterEnemyTypesPatch
                 foreach (var type in types)
                 {
-                    // if (!IsDependencyLoaded("NoteBoxz.LethalMin") && type == typeof(PurplePikminAIPatch))
-                    // {
-                    //     continue;
-                    // }
+                    if (!IsDependencyLoaded("NoteBoxz.LethalMin"))
+                    {
+                        if (type == typeof(WaterWraithPikminEnemy) || type == typeof(PurplePikminAIPatch))
+                            continue;
+                    }
                     try
                     {
                         Harmony.PatchAll(type);

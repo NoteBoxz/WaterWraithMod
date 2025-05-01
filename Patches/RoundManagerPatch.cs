@@ -35,10 +35,14 @@ namespace WaterWraithMod.Patches
             // {
             //     WaterWraithMod.Logger.LogInfo(item);
             // }
-            if (WaterWraithMod.GetParsedMoonSpawn().ContainsKey(__instance.currentLevel.PlanetName))
+            foreach (string key in WaterWraithMod.GetParsedMoonSpawn().Keys)
             {
-                WaterWraithMod.GetParsedMoonSpawn().TryGetValue(__instance.currentLevel.PlanetName, out AIvalue);
-                WaterWraithMod.Logger.LogInfo($"override value: {AIvalue}");
+                if (key.Contains(__instance.currentLevel.PlanetName))
+                {
+                    WaterWraithMod.GetParsedMoonSpawn().TryGetValue(key, out AIvalue);
+                    WaterWraithMod.Logger.LogInfo($"override value: {AIvalue}");
+                    break;
+                }
             }
             WaterWraithMod.Logger.LogInfo($"RNG: {RNG}, CHANCE: {AIvalue}");
             if (RNG < AIvalue)
@@ -130,8 +134,6 @@ namespace WaterWraithMod.Patches
                         WaterWraithMod.Logger.LogInfo($"WaterWraith added to the enemies list at index {SpawnableIndex}");
                     }
 
-                    int RNG = UnityEngine.Random.Range(0, 100);
-
                     switch (WaterWraithMod.WraithSpawnPositionConfig.Value)
                     {
                         case WraithSpawnPosition.OnlyIndoors:
@@ -151,15 +153,24 @@ namespace WaterWraithMod.Patches
                             }
                             break;
                         case WraithSpawnPosition.IndoorsAndOutdoors:
-                            List<GameObject> EverySpawnPoint = new List<GameObject>();
-                            EverySpawnPoint.AddRange(spawnPointsOut);
-                            EverySpawnPoint.AddRange(spawnPointsIn);
-                            if (EverySpawnPoint.Count > 0)
+                            float RNG = UnityEngine.Random.Range(0.0f, 100f);
+                            float AIvalue = WaterWraithMod.WaterWaithSpawnPositionChance.Value;
+                            Vector3 pos = Vector3.zero;
+                            if (RNG < AIvalue)
                             {
-                                __instance.SpawnEnemyOnServer(
-                                    EverySpawnPoint[UnityEngine.Random.Range(0, EverySpawnPoint.Count)].transform.position,
-                                    WraithEnemy.enemyPrefab.transform.rotation.y, SpawnableIndex);
+                                if (spawnPointsOut.Length > 0)
+                                {
+                                    pos = spawnPointsOut[UnityEngine.Random.Range(0, spawnPointsOut.Length)].transform.position;
+                                }
                             }
+                            else
+                            {
+                                if (spawnPointsIn.Length > 0)
+                                {
+                                    pos = spawnPointsIn[UnityEngine.Random.Range(0, spawnPointsIn.Length)].transform.position;
+                                }
+                            }
+                            __instance.SpawnEnemyOnServer(pos, WraithEnemy.enemyPrefab.transform.rotation.y, SpawnableIndex);
                             break;
                     }
                 }

@@ -5,7 +5,7 @@
         <AssemblyName>NoteBoxz.WaterWraith</AssemblyName>
         <Product>WaterWraithMod</Product>
         <!-- Change to whatever version you're currently on. -->
-        <Version>1.5.1</Version>
+        <Version>2.0.0</Version>
     </PropertyGroup>
 
     <!-- Project Properties -->
