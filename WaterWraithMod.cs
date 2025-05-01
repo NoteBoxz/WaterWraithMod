@@ -41,6 +41,7 @@ namespace WaterWraithMod
         public static ConfigEntry<float> EnemyChaseExitDistanceThreshold = null!;
         public static ConfigEntry<float> EnemyChaseTimer = null!;
         public static ConfigEntry<float> PlayerOutOfLOSTimer = null!;
+        public static ConfigEntry<bool> KnowWherePlayerIsWhenOutOfLOS = null!;
         public static ConfigEntry<GameGeneration> GameGenerationConfig = null!;
         public static Dictionary<string, float> GetParsedMoonSpawn()
         {
@@ -209,6 +210,15 @@ namespace WaterWraithMod
                 "Player Out of LOS Timer",
                 10f,
                 "How long the Water Wraith will continue chasing a player after losing line of sight. (in seconds)"
+            );
+
+            KnowWherePlayerIsWhenOutOfLOS = Config.Bind(
+                "Player Interaction",
+                "Know Where Player Is When Out of LOS",
+                true,
+                "If the Water Wraith will know where the player is when they are out of line of sight. " +
+                 "This will make it so players will need to be out of it's LOS for the timer's duration. " +
+                 "Making it harder for players to lose the Water Wraith by going out of it's LOS."
             );
 
             GameGenerationConfig.SettingChanged += (sender, e) => { UpdateAllOverrides(); };

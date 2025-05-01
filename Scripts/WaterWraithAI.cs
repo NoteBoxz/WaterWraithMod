@@ -187,9 +187,13 @@ namespace WaterWraithMod.Scripts
                                 LastPositionTargetWasSeen = targetPlayer.transform.position;
                                 WaterWraithMod.Logger.LogInfo($"WaterWraith: Player went of of LOS Last position was seen: {LastPositionTargetWasSeen}");
                             }
+                            if (WaterWraithMod.KnowWherePlayerIsWhenOutOfLOS.Value)
+                            {
+                                LastPositionTargetWasSeen = targetPlayer.transform.position;
+                            }
                             movingTowardsTargetPlayer = false;
                             SetDestinationToPosition(LastPositionTargetWasSeen.Value);
-                            if (agent.remainingDistance < 2f)
+                            if (agent.remainingDistance < 2f && !WaterWraithMod.KnowWherePlayerIsWhenOutOfLOS.Value)
                             {
                                 stopChaseReason = "target player not in line of sight";
                                 LastPositionTargetWasSeen = null;
@@ -203,10 +207,13 @@ namespace WaterWraithMod.Scripts
                         if (LastPositionTargetWasSeen != null)
                         {
                             PlayerControllerB? LOScheck = CheckLineOfSightForPlayer(-1, WaterWraithMod.PlayerDetectionRange.Value, WaterWraithMod.PlayerDetectionRange.Value);
-                            SetMovingTowardsTargetPlayer(LOScheck);
-                            moveTowardsDestination = true;
-                            LastPositionTargetWasSeen = null;
-                            WaterWraithMod.Logger.LogInfo($"WaterWraith: Player went of of LOS Last position was seen: {LastPositionTargetWasSeen}");
+                            if (LOScheck != null)
+                            {
+                                SetMovingTowardsTargetPlayer(LOScheck);
+                                moveTowardsDestination = true;
+                                LastPositionTargetWasSeen = null;
+                                WaterWraithMod.Logger.LogInfo($"WaterWraith: Player is back in LOS: {LOScheck?.playerUsername}");
+                            }
                         }
 
                         if (stopChaseReason != null)
