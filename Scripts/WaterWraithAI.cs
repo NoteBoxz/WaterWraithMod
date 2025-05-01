@@ -189,12 +189,8 @@ namespace WaterWraithMod.Scripts
                                 LastPositionTargetWasSeen = targetPlayer.transform.position;
                                 WaterWraithMod.Logger.LogInfo($"WaterWraith: Player went of of LOS Last position was seen: {LastPositionTargetWasSeen}");
                             }
-                            if (WaterWraithMod.KnowWherePlayerIsWhenOutOfLOS.Value)
-                            {
-                                LastPositionTargetWasSeen = targetPlayer.transform.position;
-                            }
                             movingTowardsTargetPlayer = false;
-                            SetDestinationToPosition(LastPositionTargetWasSeen.Value);
+                            SetDestinationToPosition(WaterWraithMod.KnowWherePlayerIsWhenOutOfLOS.Value ? targetPlayer.transform.position : LastPositionTargetWasSeen.Value);
                             if (agent.remainingDistance < 2f && !WaterWraithMod.KnowWherePlayerIsWhenOutOfLOS.Value)
                             {
                                 stopChaseReason = "target player not in line of sight";
@@ -486,6 +482,7 @@ namespace WaterWraithMod.Scripts
         {
             creatureAnimator.SetTrigger("Die");
             inSpecialAnimation = true;
+            isEnemyDead = true;
             creatureVoice.PlayOneShot(DethSounds[Random.Range(0, DethSounds.Length - 1)]);
             if (IsServer)
                 StartCoroutine(CallKillOnServer());
