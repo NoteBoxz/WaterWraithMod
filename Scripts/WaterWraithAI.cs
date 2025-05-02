@@ -585,9 +585,7 @@ namespace WaterWraithMod.Scripts
                 }
                 if (!LethalMin.Utils.PikminChecks.IsPikminResistantToHazard(Pai, PikminHazard.Crush, this))
                 {
-                    Pai.DoSquishDeathNonAutoritiveServerRpc();
-                    if (Pai.IsOwner)
-                        Pai.DoSquishDeath();
+                    Pai.DoSquishDeathClientRpc(false);
                     WaterWraithMod.Logger.LogInfo($"Pikmin {Pai.name} is not resistant to crush damage!");
                 }
                 else
