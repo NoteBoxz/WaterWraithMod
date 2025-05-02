@@ -189,7 +189,8 @@ namespace WaterWraithMod.Scripts
                                 WaterWraithMod.Logger.LogInfo($"WaterWraith: Player went of of LOS Last position was seen: {LastPositionTargetWasSeen}");
                             }
                             movingTowardsTargetPlayer = false;
-                            SetDestinationToPosition(WaterWraithMod.KnowWherePlayerIsWhenOutOfLOS.Value ? targetPlayer.transform.position : LastPositionTargetWasSeen.Value);
+                            Vector3 pos = WaterWraithMod.KnowWherePlayerIsWhenOutOfLOS.Value ? targetPlayer.transform.position : LastPositionTargetWasSeen.Value;
+                            SetDestinationToPosition(pos);
                             if (agent.remainingDistance < 2f && !WaterWraithMod.KnowWherePlayerIsWhenOutOfLOS.Value)
                             {
                                 stopChaseReason = "target player not in line of sight";
@@ -327,7 +328,8 @@ namespace WaterWraithMod.Scripts
         {
             if (Vector3.Distance(transform.position, RoundManager.FindMainEntrancePosition()) < 20)
             {
-                roamWorld.currentTargetNode = ChooseFarthestNodeFromPosition(RoundManager.FindMainEntrancePosition()).gameObject;
+                Transform node = ChooseFarthestNodeFromPosition(RoundManager.FindMainEntrancePosition());
+                roamWorld.currentTargetNode = node.gameObject;
                 roamWorld.choseTargetNode = true;
                 WaterWraithMod.Logger.LogInfo("WaterWraith: Setting position away from main");
                 return true;
