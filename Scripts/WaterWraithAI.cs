@@ -6,7 +6,6 @@ using LethalMin;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.AI;
-using WaterWraithMod.Patches;
 
 namespace WaterWraithMod.Scripts
 {

@@ -1,7 +1,5 @@
 using HarmonyLib;
 using UnityEngine;
-using Unity.Netcode;
-using WaterWraithMod;
 using LethalMin;
 using WaterWraithMod.Scripts;
 

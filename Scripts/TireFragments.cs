@@ -1,11 +1,5 @@
 ﻿using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using GameNetcodeStuff;
-using LethalMin;
-using Unity.Netcode;
 using UnityEngine;
-using WaterWraithMod.Patches;
 
 namespace WaterWraithMod.Scripts
 {

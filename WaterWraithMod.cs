@@ -11,7 +11,6 @@ using BepInEx.Bootstrap;
 using System.Collections.Generic;
 using System.Linq;
 using WaterWraithMod.Scripts;
-using LethalMin;
 
 namespace WaterWraithMod
 {
@@ -273,7 +272,7 @@ namespace WaterWraithMod
 
         internal static void LETHALMIN_AddDef()
         {
-            CustomPikminEnemyOverrideDef def = WraithEnemyType.enemyPrefab.AddComponent<CustomPikminEnemyOverrideDef>();
+            LethalMin.CustomPikminEnemyOverrideDef def = WraithEnemyType.enemyPrefab.AddComponent<LethalMin.CustomPikminEnemyOverrideDef>();
             def.CustomPikminEnemyOverrideType = typeof(WaterWraithPikminEnemy);
         }
 
@@ -334,11 +333,6 @@ namespace WaterWraithMod
                 // Patch everything except FilterEnemyTypesPatch
                 foreach (var type in types)
                 {
-                    if (!IsDependencyLoaded("NoteBoxz.LethalMin"))
-                    {
-                        if (type == typeof(WaterWraithPikminEnemy) || type == typeof(PurplePikminAIPatch))
-                            continue;
-                    }
                     try
                     {
                         Harmony.PatchAll(type);
