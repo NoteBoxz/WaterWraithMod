@@ -121,7 +121,7 @@ namespace WaterWraithMod
             PerMoonSpawnChanceConfig = Config.Bind(
                 "Spawning",
                 "Per-Moon Spawn Chance",
-                "Zeranos:0,March:35",
+                "Experimentation:10,Assurance:15,Vow:20,March:30,Adamance:35,Rend:45,Dine:50,Titan:50,Embrion:70,Artifice:70,Zeranos:0,Gordion:0",
                 "The chance for a Water Wraith to spawn per moon these values will override" +
                 " the base spawn chance when spawning on a moon in the list." +
                 " (Formatted just like Lethal Level Loader's configs)" +
